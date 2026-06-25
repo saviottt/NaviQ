@@ -44,6 +44,7 @@
         <div class="divider"></div>
         <button onclick="exportJSON()" title="Save Layout"><i data-lucide="save"></i><span>Save</span></button>
         <button onclick="importJSON()" title="Load Layout"><i data-lucide="folder-open"></i><span>Load</span></button>
+        <button class="merge-btn" onclick="mergeJSON()" title="Merge another layout into the current canvas"><i data-lucide="git-merge"></i><span>Merge Layout</span></button>
         <button class="danger" onclick="confirmClearCanvas()" title="Remove all elements, floors, and walls and start fresh"><i data-lucide="trash-2"></i><span>Clear</span></button>
         <button class="primary" onclick="exportPDF()" title="Export as PDF"><i data-lucide="file-down"></i><span>PDF</span></button>
         <button class="success" onclick="openPathFinder()" title="Calculate routes"><i data-lucide="route"></i><span>Find Path</span></button>
@@ -266,6 +267,7 @@
   <div id="toast"></div>
 
   <input type="file" id="jsonFileInput" accept=".json" style="display:none" onchange="handleJSONImport(event)">
+  <input type="file" id="jsonMergeInput" accept=".json" style="display:none" onchange="handleJSONMerge(event)">
 
   <div class="modal-overlay hidden" id="stairLinkModal">
     <div class="modal">

@@ -55,6 +55,8 @@ window.deleteSelectedWall = deleteSelectedWall;
 window.exportJSON = exportJSON;
 window.importJSON = importJSON;
 window.handleJSONImport = handleJSONImport;
+window.mergeJSON = mergeJSON;
+window.handleJSONMerge = handleJSONMerge;
 window.exportPDF = exportPDF;
 
 // Zoom and Canvas Resize actions
