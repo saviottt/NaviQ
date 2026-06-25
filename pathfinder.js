@@ -125,9 +125,21 @@ function buildGraph() {
   state.floors.forEach(f => {
     const floorEls = f.blocks.flatMap(b => b.elements).filter(el => el.type !== 'text');
 
+    const hasWaypointsCorridorsArr = floorEls.filter(c => {
+       if (c.type === 'Corridor' || (c.type || '').startsWith('Corridor-')) {
+          return floorEls.some(el => el.type === 'waypoint' && rectsOverlapOrTouch(c, el));
+       }
+       return false;
+    });
+    const hasWaypointsSet = new Set(hasWaypointsCorridorsArr.map(c => c.id));
+
     for (let i = 0; i < floorEls.length; i++) {
       for (let j = i + 1; j < floorEls.length; j++) {
         const a = floorEls[i], bEl = floorEls[j];
+
+        // NEW LOGIC: If both overlap, but one is a Corridor that has waypoints, SKIP the standard connection!
+        if (hasWaypointsSet && (hasWaypointsSet.has(a.id) || hasWaypointsSet.has(bEl.id))) continue;
+
         if (!rectsOverlapOrTouch(a, bEl)) continue;
 
         const blocked = wallBlocksEdge(a, bEl, f.id);
@@ -139,14 +151,14 @@ function buildGraph() {
         const edgePoint = getSharedWallMidpoint(a, bEl);
 
         const aCenter = rectCenter(a);
+        const bCenter = rectCenter(bEl);
 
-        const d = Math.sqrt(
-          (aCenter.x - edgePoint.x) ** 2 +
-          (aCenter.y - edgePoint.y) ** 2
-        );
+        const dA = Math.sqrt((aCenter.x - edgePoint.x) ** 2 + (aCenter.y - edgePoint.y) ** 2);
+        const dB = Math.sqrt((bCenter.x - edgePoint.x) ** 2 + (bCenter.y - edgePoint.y) ** 2);
+
         adj.get(a.id).push({
           neighborId: bEl.id,
-          cost: d,
+          cost: dA,
           type: 'same',
           meta: {
             floorId: f.id,
@@ -157,7 +169,7 @@ function buildGraph() {
 
         adj.get(bEl.id).push({
           neighborId: a.id,
-          cost: d,
+          cost: dB,
           type: 'same',
           meta: {
             floorId: f.id,
@@ -167,6 +179,102 @@ function buildGraph() {
         });
       }
     }
+
+    // --- NEW LOGIC: Waypoint MST for Corridors ---
+    // Group into clusters of overlapping corridors
+    const clusters = [];
+    const visitedCorr = new Set();
+    hasWaypointsCorridorsArr.forEach(c => {
+       if (visitedCorr.has(c.id)) return;
+       const cluster = [];
+       const q = [c];
+       visitedCorr.add(c.id);
+       while (q.length > 0) {
+          const curr = q.shift();
+          cluster.push(curr);
+          hasWaypointsCorridorsArr.forEach(otherC => {
+             if (!visitedCorr.has(otherC.id) && rectsOverlapOrTouch(curr, otherC)) {
+                visitedCorr.add(otherC.id);
+                q.push(otherC);
+             }
+          });
+       }
+       clusters.push(cluster);
+    });
+
+    clusters.forEach(cluster => {
+       const wps = new Set();
+       const others = new Set();
+       cluster.forEach(c => {
+          floorEls.forEach(el => {
+             if (hasWaypointsSet.has(el.id)) return; // Skip other waypoint corridors
+             if (rectsOverlapOrTouch(c, el)) {
+                if (el.type === 'waypoint') wps.add(el);
+                else others.add(el);
+             }
+          });
+       });
+       
+       const wpsArr = Array.from(wps);
+       const othersArr = Array.from(others);
+       
+       // Connect others to nearest wp
+       othersArr.forEach(other => {
+          let nearestWp = null;
+          let minDist = Infinity;
+          wpsArr.forEach(wp => {
+             const d = dist(other, wp);
+             if (d < minDist) { minDist = d; nearestWp = wp; }
+          });
+          if (nearestWp) {
+             const edgePoint = getSharedWallMidpoint(other, nearestWp);
+             const otherCenter = rectCenter(other);
+             const wpCenter = rectCenter(nearestWp);
+             const dOther = Math.sqrt((otherCenter.x - edgePoint.x) ** 2 + (otherCenter.y - edgePoint.y) ** 2);
+             const dWp = Math.sqrt((wpCenter.x - edgePoint.x) ** 2 + (wpCenter.y - edgePoint.y) ** 2);
+
+             adj.get(other.id).push({
+               neighborId: nearestWp.id, cost: dOther, type: 'same', 
+               meta: { floorId: f.id, floorName: f.name, transition: edgePoint }
+             });
+             adj.get(nearestWp.id).push({
+               neighborId: other.id, cost: dWp, type: 'same', 
+               meta: { floorId: f.id, floorName: f.name, transition: edgePoint }
+             });
+          }
+       });
+
+       // MST for waypoints
+       if (wpsArr.length > 1) {
+          const edges = [];
+          for (let i = 0; i < wpsArr.length; i++) {
+             for (let j = i + 1; j < wpsArr.length; j++) {
+                edges.push({ a: wpsArr[i], b: wpsArr[j], d: dist(wpsArr[i], wpsArr[j]) });
+             }
+          }
+          edges.sort((e1, e2) => e1.d - e2.d);
+          const parent = {};
+          const find = (i) => { if (parent[i] === undefined) return i; return parent[i] = find(parent[i]); };
+          const union = (i, j) => {
+             const rootI = find(i); const rootJ = find(j);
+             if (rootI !== rootJ) { parent[rootI] = rootJ; return true; }
+             return false;
+          };
+          
+          edges.forEach(e => {
+             if (union(e.a.id, e.b.id)) {
+                const edgePoint = getSharedWallMidpoint(e.a, e.b);
+                const aCenter = rectCenter(e.a);
+                const bCenter = rectCenter(e.b);
+                const dA = Math.sqrt((aCenter.x - edgePoint.x) ** 2 + (aCenter.y - edgePoint.y) ** 2);
+                const dB = Math.sqrt((bCenter.x - edgePoint.x) ** 2 + (bCenter.y - edgePoint.y) ** 2);
+
+                adj.get(e.a.id).push({ neighborId: e.b.id, cost: dA, type: 'same', meta: { floorId: f.id, floorName: f.name, transition: edgePoint } });
+                adj.get(e.b.id).push({ neighborId: e.a.id, cost: dB, type: 'same', meta: { floorId: f.id, floorName: f.name, transition: edgePoint } });
+             }
+          });
+       }
+    });
   });
 
   const STAIR_COST = 120;
