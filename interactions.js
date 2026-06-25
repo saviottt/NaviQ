@@ -315,25 +315,54 @@ function startResize(e, el, dir) {
   const dimTag = document.getElementById('dims-' + el.id);
 
   const onMove = evt => {
-    const dx = (evt.clientX - startX) / state.zoom;
-    const dy = (evt.clientY - startY) / state.zoom;
+    const rawDx = (evt.clientX - startX) / state.zoom;
+    const rawDy = (evt.clientY - startY) / state.zoom;
+    let dx = rawDx;
+    let dy = rawDy;
+    if (el.r) {
+      const rad = -(el.r * Math.PI / 180);
+      dx = rawDx * Math.cos(rad) - rawDy * Math.sin(rad);
+      dy = rawDx * Math.sin(rad) + rawDy * Math.cos(rad);
+    }
+
+    let localX = 0, localY = 0;
+    let newW = origW, newH = origH;
 
     if (dir.includes('e')) {
-      el.w = Math.max(20, snap(origW + dx));
+      newW = Math.max(20, snap(origW + dx));
     }
     if (dir.includes('w')) {
-      const newW = Math.max(20, snap(origW - dx));
-      el.x = origX + (origW - newW);
-      el.w = newW;
+      newW = Math.max(20, snap(origW - dx));
+      localX = origW - newW;
     }
     if (dir.includes('s')) {
-      el.h = Math.max(20, snap(origH + dy));
+      newH = Math.max(20, snap(origH + dy));
     }
     if (dir.includes('n')) {
-      const newH = Math.max(20, snap(origH - dy));
-      el.y = origY + (origH - newH);
-      el.h = newH;
+      newH = Math.max(20, snap(origH - dy));
+      localY = origH - newH;
     }
+
+    const cLocalOldX = origW / 2;
+    const cLocalOldY = origH / 2;
+    const cLocalNewX = localX + newW / 2;
+    const cLocalNewY = localY + newH / 2;
+    
+    let dcGlobalX = cLocalNewX - cLocalOldX;
+    let dcGlobalY = cLocalNewY - cLocalOldY;
+    
+    if (el.r) {
+      const rad = el.r * Math.PI / 180;
+      const tX = dcGlobalX * Math.cos(rad) - dcGlobalY * Math.sin(rad);
+      const tY = dcGlobalX * Math.sin(rad) + dcGlobalY * Math.cos(rad);
+      dcGlobalX = tX;
+      dcGlobalY = tY;
+    }
+    
+    el.w = newW;
+    el.h = newH;
+    el.x = origX + origW / 2 + dcGlobalX - newW / 2;
+    el.y = origY + origH / 2 + dcGlobalY - newH / 2;
 
     div.style.left = el.x + 'px'; div.style.top = el.y + 'px';
     div.style.width = el.w + 'px'; div.style.height = el.h + 'px';
