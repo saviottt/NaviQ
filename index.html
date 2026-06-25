@@ -1,0 +1,388 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Building Layout Editor Pro</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+
+  <div class="container">
+    <div class="header">
+      <div class="toolbar-group">
+        <h2><i data-lucide="layout" class="header-icon"></i> Editor Pro</h2>
+        <button onclick="undo()" title="Undo (Ctrl+Z)"><i data-lucide="undo-2"></i><span>Undo</span></button>
+        <button onclick="redo()" title="Redo (Ctrl+Y)"><i data-lucide="redo-2"></i><span>Redo</span></button>
+        <div class="divider"></div>
+        <label class="switch-container">
+          <input type="checkbox" id="snapToggle">
+          <span class="switch-label">Snap Grid</span>
+        </label>
+      </div>
+      <div class="toolbar-group">
+        <label class="control-label">
+          <span>Zoom</span>
+          <input type="range" id="zoomSlider" min="0.4" max="2" step="0.1" value="1" oninput="updateZoom()">
+          <span id="zoomVal" class="badge">100%</span>
+        </label>
+        <div class="divider"></div>
+        <label class="control-label dimensions-label">
+          <span>Canvas Size</span>
+          <div class="dimensions-input-group">
+            <input type="number" id="canvasW" value="3000" min="800" step="200" title="Canvas width (px)" oninput="resizeCanvas()">
+            <span class="x-sep">×</span>
+            <input type="number" id="canvasH" value="2400" min="600" step="200" title="Canvas height (px)" oninput="resizeCanvas()">
+          </div>
+        </label>
+        <div class="divider"></div>
+        <button onclick="exportJSON()" title="Save Layout"><i data-lucide="save"></i><span>Save</span></button>
+        <button onclick="importJSON()" title="Load Layout"><i data-lucide="folder-open"></i><span>Load</span></button>
+        <button class="merge-btn" onclick="mergeJSON()" title="Merge another layout into the current canvas"><i data-lucide="git-merge"></i><span>Merge Layout</span></button>
+        <button class="danger" onclick="confirmClearCanvas()" title="Remove all elements, floors, and walls and start fresh"><i data-lucide="trash-2"></i><span>Clear</span></button>
+        <button class="primary" onclick="exportPDF()" title="Export as PDF"><i data-lucide="file-down"></i><span>PDF</span></button>
+        <button class="success" onclick="openPathFinder()" title="Calculate routes"><i data-lucide="route"></i><span>Find Path</span></button>
+        <button id="viewModeBtn" onclick="toggle3DMode()" title="Toggle 2D / 3D View">
+          <i data-lucide="box"></i><span>3D View</span>
+        </button>
+        <button id="pathClearBtn" class="danger" style="display:none;" onclick="clearPathHighlights()"><i data-lucide="x"></i><span>Clear Path</span></button>
+        <button class="qr-btn" onclick="window.location.href='https://peppy-horse-1e80b7.netlify.app/'" title="QR Code Link"><i data-lucide="qr-code"></i><span>QR</span></button>
+      </div>
+    </div>
+
+    <div class="main">
+      <div class="sidebar">
+        <div class="sidebar-scroll">
+
+          <div class="panel">
+            <h3><i data-lucide="plus-circle"></i> Add Elements</h3>
+            <select id="roomType">
+              <option value="Room">Standard Room</option>
+              <option value="Classroom">Classroom</option>
+              <option value="Office">Office</option>
+              <option value="Corridor" disabled style="font-weight:700;color:#555;background:#2d3748;">── Corridor Plans ──</option>
+              <option value="Corridor-Square">▪ Square Plan</option>
+              <option value="Corridor-Rect">▬ Rectangular Plan</option>
+              <option value="Corridor-Circle">◯ Circular Plan</option>
+              <option value="Corridor-Triangle">▲ Triangular Plan</option>
+              <option value="Corridor-L">⌐ L-Shaped Plan</option>
+              <option value="Corridor-T">⊤ T-Shaped Plan</option>
+              <option value="Corridor-U">∪ U-Shaped Plan</option>
+              <option value="Corridor-H">H H-Shaped Plan</option>
+              <option value="Corridor-E">Ǝ E-Shaped Plan</option>
+              <option value="Corridor-Y">Y Y-Shaped Plan</option>
+              <option value="Corridor-Cross">✚ Cross-Shaped Plan</option>
+              <option value="Corridor-Courtyard">⬜ Courtyard Plan</option>
+              <option value="Staircase">Staircase</option>
+              <option value="Restroom">Restroom</option>
+              <option value="Hall">Hall</option>
+              <option value="Elevator">Elevator</option>
+            </select>
+            <button class="primary space-add-btn" onclick="addRoom()"><i data-lucide="plus"></i> Add Space</button>
+            <div class="control-row" style="margin-top:8px; margin-bottom:4px;">
+              <label class="checkbox-container">
+                <input type="checkbox" id="lockSizeToggle">
+                <span class="checkbox-label" style="font-size:11px;font-weight:600;">Fix/Lock size for new spaces</span>
+              </label>
+            </div>
+            <div class="row">
+              <button style="flex:1" onclick="addEl('door',60,10,'#8B4513','Door')"><i data-lucide="door-closed"></i> Door</button>
+              <button style="flex:1" onclick="addEl('window',60,10,'#87CEEB','Window')"><i data-lucide="frame"></i> Window</button>
+            </div>
+            <div class="row" style="margin-top:4px;">
+              <button style="flex:1" onclick="addEl('entry_exit',20,20,'#14b8a6','Entry/Exit')"><i data-lucide="map-pin"></i> Entry/Exit</button>
+              <button style="flex:1" onclick="addEl('waypoint',20,20,'#3b82f6','Waypoint')"><i data-lucide="map-pin"></i> Waypoint</button>
+            </div>
+            <div class="row" style="margin-top:4px;">
+              <button style="flex:1" onclick="addEl('text',100,30,'transparent','Text Label')"><i data-lucide="type"></i> Text Label</button>
+            </div>
+            <div class="row" style="margin-top:4px;">
+              <button id="wallToolBtn" style="flex:1;" onclick="toggleWallTool()"><i data-lucide="pen-tool"></i> Draw Wall</button>
+              <button style="flex:1" onclick="deleteSelectedWall()"><i data-lucide="eraser"></i> Del Wall</button>
+            </div>
+            <div id="wallHint" style="display:none;" class="hint-box">
+              <i data-lucide="info" style="width:14px;height:14px;flex-shrink:0;"></i>
+              <span>Click &amp; drag on canvas to draw a wall. Press <b>Esc</b> or click <b>Draw Wall</b> to exit.</span>
+            </div>
+          </div>
+
+          <div class="panel">
+            <h3><i data-lucide="building"></i> Structure</h3>
+            <div id="floorsList"></div>
+            <div class="row" style="margin-top:8px;">
+              <button style="flex:1" onclick="addBuilding()"><i data-lucide="plus"></i> Bldg</button>
+              <button style="flex:1" onclick="addFloor()"><i data-lucide="plus"></i> Floor</button>
+            </div>
+          </div>
+
+          <div class="panel">
+            <h3><i data-lucide="chevrons-up-down"></i> Vertical Connections</h3>
+            <div id="stairLinksList">
+              <div class="empty-state">
+                Select a Staircase, Elevator, or Stair Hall on canvas to link vertical routes.
+              </div>
+            </div>
+            <div class="row" style="margin-top:8px;">
+              <div style="flex:1" class="control-row"><label>Stairs</label><input type="number" id="stairHallCount" min="1" max="12" value="4"></div>
+              <button style="flex:1" onclick="buildStairHall()"><i data-lucide="git-branch"></i> Build Stair Hall</button>
+            </div>
+            <button class="secondary-action-btn" onclick="openStairManager()"><i data-lucide="settings"></i> Manage Vertical Links</button>
+          </div>
+
+          <div class="panel">
+            <h3><i data-lucide="link-2"></i> Element Links</h3>
+            <div id="universalLinksList">
+              <div class="empty-state">
+                Select any element and use "Link to Any Element" to create connections.
+              </div>
+            </div>
+            <button class="secondary-action-btn" onclick="openUniversalLinkManager()"><i data-lucide="settings"></i> Manage All Links</button>
+          </div>
+
+          <div class="panel properties-panel" id="propsPanel" style="display:none;">
+            <h3><i data-lucide="sliders"></i> Properties</h3>
+            <div class="control-row">
+              <label>Label</label>
+              <input id="pname" autocomplete="off" />
+            </div>
+            <div class="row">
+              <div style="flex:1" class="control-row"><label>Width</label><input type="number" id="pwidth"></div>
+              <div style="flex:1" class="control-row"><label>Length</label><input type="number" id="pheight"></div>
+            </div>
+            <div class="row">
+              <div style="flex:1" class="control-row"><label>X Position</label><input type="number" id="px"></div>
+              <div style="flex:1" class="control-row"><label>Y Position</label><input type="number" id="py"></div>
+            </div>
+            <div class="control-row">
+              <label>Rotation (°)</label>
+              <div class="slider-group">
+                <input type="range" id="prot" min="0" max="360" step="15">
+              </div>
+            </div>
+            <div class="control-row">
+              <label>Color</label>
+              <div style="display:flex; align-items:center; gap:8px;">
+                <input type="color" id="pcolor" class="color-picker-input">
+                <div class="color-presets" style="display:flex; flex-wrap:wrap; gap:4px; margin-top:2px;">
+                  <button type="button" class="color-preset-btn" style="background:#fca5a5; width:18px; height:18px; border-radius:50%; border:1px solid rgba(255,255,255,0.2); cursor:pointer;" onclick="setPresetColor('#fca5a5')" title="Light Red"></button>
+                  <button type="button" class="color-preset-btn" style="background:#fdbb2d; width:18px; height:18px; border-radius:50%; border:1px solid rgba(255,255,255,0.2); cursor:pointer;" onclick="setPresetColor('#fdbb2d')" title="Light Orange"></button>
+                  <button type="button" class="color-preset-btn" style="background:#fef08a; width:18px; height:18px; border-radius:50%; border:1px solid rgba(255,255,255,0.2); cursor:pointer;" onclick="setPresetColor('#fef08a')" title="Light Yellow"></button>
+                  <button type="button" class="color-preset-btn" style="background:#86efac; width:18px; height:18px; border-radius:50%; border:1px solid rgba(255,255,255,0.2); cursor:pointer;" onclick="setPresetColor('#86efac')" title="Light Green"></button>
+                  <button type="button" class="color-preset-btn" style="background:#93c5fd; width:18px; height:18px; border-radius:50%; border:1px solid rgba(255,255,255,0.2); cursor:pointer;" onclick="setPresetColor('#93c5fd')" title="Light Blue"></button>
+                  <button type="button" class="color-preset-btn" style="background:#c084fc; width:18px; height:18px; border-radius:50%; border:1px solid rgba(255,255,255,0.2); cursor:pointer;" onclick="setPresetColor('#c084fc')" title="Light Purple"></button>
+                  <button type="button" class="color-preset-btn" style="background:#fbcfe8; width:18px; height:18px; border-radius:50%; border:1px solid rgba(255,255,255,0.2); cursor:pointer;" onclick="setPresetColor('#fbcfe8')" title="Light Pink"></button>
+                  <button type="button" class="color-preset-btn" style="background:#99f6e4; width:18px; height:18px; border-radius:50%; border:1px solid rgba(255,255,255,0.2); cursor:pointer;" onclick="setPresetColor('#99f6e4')" title="Light Teal"></button>
+                  <button type="button" class="color-preset-btn" style="background:#ffffff; width:18px; height:18px; border-radius:50%; border:1px solid rgba(255,255,255,0.2); cursor:pointer;" onclick="setPresetColor('#ffffff')" title="White"></button>
+                  <button type="button" class="color-preset-btn" style="background:#e2e8f0; width:18px; height:18px; border-radius:50%; border:1px solid rgba(255,255,255,0.2); cursor:pointer;" onclick="setPresetColor('#e2e8f0')" title="Light Gray"></button>
+                </div>
+              </div>
+            </div>
+            <div class="control-row" id="stairDirRow" style="display:none;">
+              <label>Direction</label>
+              <select id="pstairDir">
+                <option value="up">Upstairs</option>
+                <option value="down">Downstairs</option>
+              </select>
+            </div>
+            <div class="control-row" id="stairElevationRow" style="display:none;">
+              <label>Elevation (Z)</label>
+              <input type="number" id="pstairElevation" min="-200" max="500" step="5">
+            </div>
+            <label class="checkbox-container">
+              <input type="checkbox" id="pisStairs">
+              <span class="checkbox-label">Staircase Pattern</span>
+            </label>
+
+            <div id="stairLinkSection" style="display:none;">
+              <div class="stair-props">
+                <h4><i data-lucide="chevrons-up-down"></i> Vertical Connections</h4>
+                <div id="stairCurrentLinks"></div>
+                <button class="stair-link-btn" onclick="openLinkThisStair()"><i data-lucide="link"></i> Link Connector</button>
+              </div>
+            </div>
+
+            <div id="universalLinkSection">
+              <div class="universal-link-props">
+                <h4><i data-lucide="link-2"></i> Element Links</h4>
+                <div id="universalCurrentLinks"></div>
+                <button class="teal universal-link-btn" onclick="openUniversalLinkModal()"><i data-lucide="link"></i> Link to Element</button>
+              </div>
+            </div>
+          </div>
+
+          <div class="panel actions-panel" id="actionsPanel" style="display:none;">
+            <h3><i data-lucide="zap"></i> Actions</h3>
+            <div class="row" style="margin-bottom:8px;">
+              <button style="flex:1" onclick="copyElements()"><i data-lucide="copy"></i> Copy</button>
+              <button style="flex:1" onclick="pasteElements()"><i data-lucide="clipboard-paste"></i> Paste</button>
+            </div>
+            <div class="row" style="margin-bottom:8px;">
+              <button style="flex:1" onclick="groupElements()"><i data-lucide="combine"></i> Group</button>
+              <button style="flex:1" onclick="ungroupElements()"><i data-lucide="ungroup"></i> Ungroup</button>
+            </div>
+            <div class="row">
+              <button style="flex:1" onclick="duplicateSelected()"><i data-lucide="copy-plus"></i> Duplicate</button>
+              <button class="danger" style="flex:1" onclick="deleteSelected()"><i data-lucide="trash-2"></i> Delete</button>
+            </div>
+          </div>
+
+          <div class="panel">
+            <h3><i data-lucide="help-circle"></i> Instructions</h3>
+            <ul class="instructions-list">
+              <li><b>Drag</b> to move rooms</li>
+              <li><b>Corner handle</b> to resize</li>
+              <li><b>Del / Backspace</b> key to remove</li>
+              <li><b>Ctrl+D</b> to duplicate</li>
+              <li>Click <b>Draw Wall</b>, then drag on canvas to draw walls</li>
+              <li>Walls <b>block paths</b> — arrows reroute through doors &amp; corridors</li>
+              <li>Add <b>Staircase/Elevator/Stair Hall</b>, then link them via Properties</li>
+              <li>Select any element → click <b>Link to Element</b> to connect rooms/doors/etc.</li>
+              <li>Click <b>Find Path</b> to search shortest routes</li>
+            </ul>
+          </div>
+
+        </div>
+      </div>
+
+      <div class="canvas-container" id="canvasContainer">
+        <div class="canvas-3d-viewport" id="canvas3dViewport">
+          <div class="canvas-wrap" id="canvasWrap">
+            <div id="canvas">
+              <svg id="pathArrowSvg" xmlns="http://www.w3.org/2000/svg"></svg>
+              <div id="wallDrawPreview"></div>
+            </div>
+            <div id="pathFloorBar"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div id="toast"></div>
+
+  <input type="file" id="jsonFileInput" accept=".json" style="display:none" onchange="handleJSONImport(event)">
+  <input type="file" id="jsonMergeInput" accept=".json" style="display:none" onchange="handleJSONMerge(event)">
+
+  <div class="modal-overlay hidden" id="stairLinkModal">
+    <div class="modal">
+      <h2>🪜 Link Vertical Connector</h2>
+      <p style="font-size:13px;color:#666;margin-bottom:16px;">
+        Connect <strong id="slSourceName"></strong> on <strong id="slSourceFloor"></strong> to a staircase, elevator, or Stair Hall on any floor.
+      </p>
+      <div class="modal-section">
+        <label>Target Floor</label>
+        <select id="slTargetFloor" onchange="populateTargetStairs()"></select>
+      </div>
+      <div class="modal-section">
+        <label>Target Connector</label>
+        <select id="slTargetStair"></select>
+      </div>
+      <div class="modal-footer">
+        <button onclick="closeStairLinkModal()">Cancel</button>
+        <button class="purple" onclick="confirmStairLink()">🔗 Link Connector</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="modal-overlay hidden" id="stairManagerModal">
+    <div class="modal">
+      <h2>🪜 All Vertical Connector Links</h2>
+      <div id="stairManagerContent"></div>
+      <div class="modal-footer">
+        <button onclick="document.getElementById('stairManagerModal').classList.add('hidden')">Close</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="modal-overlay hidden" id="universalLinkModal">
+    <div class="modal">
+      <h2>🔗 Link Element to Another</h2>
+      <p style="font-size:13px;color:#666;margin-bottom:16px;">
+        Connect <strong id="ulSourceName"></strong> on <strong id="ulSourceFloor"></strong> to any element on any floor.
+      </p>
+      <div class="modal-section">
+        <label>Target Floor</label>
+        <select id="ulTargetFloor" onchange="populateUniversalTargets()"></select>
+      </div>
+      <div class="modal-section">
+        <label>Target Element</label>
+        <select id="ulTargetElement"></select>
+      </div>
+      <div class="modal-footer">
+        <button onclick="closeUniversalLinkModal()">Cancel</button>
+        <button class="teal" onclick="confirmUniversalLink()">🔗 Create Link</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="modal-overlay hidden" id="universalLinkManagerModal">
+    <div class="modal">
+      <h2>🔗 All Element Links</h2>
+      <div id="universalLinkManagerContent"></div>
+      <div class="modal-footer">
+        <button onclick="document.getElementById('universalLinkManagerModal').classList.add('hidden')">Close</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="modal-overlay hidden" id="pathModal">
+    <div class="modal" style="width:420px;">
+      <h2>🗺️ Find Shortest Path</h2>
+      <div class="modal-section">
+        <label>From (Start Room)</label>
+        <select id="pfFrom" onchange="clearPathResult()"></select>
+      </div>
+      <div class="modal-section">
+        <label>Stops (Optional Waypoints)</label>
+        <div id="pfStopsContainer" style="display:flex; flex-direction:column; gap:8px; margin-top:6px; margin-bottom:8px;"></div>
+        <button class="secondary" onclick="addPathfinderStop()" style="font-size:11px; padding:4px 8px; width:auto; display:inline-flex; align-items:center; gap:4px; border:1px dashed var(--border-color); background:transparent;"><i data-lucide="plus" style="width:12px;height:12px;"></i> Add Stop</button>
+      </div>
+      <div class="modal-section">
+        <label>To (End Room)</label>
+        <select id="pfTo" onchange="clearPathResult()"></select>
+      </div>
+      <div id="pathResult" style="margin-top:12px;"></div>
+      <div class="modal-footer" style="justify-content:space-between;align-items:center;margin-top:12px;">
+        <button onclick="closePathModal()">Cancel</button>
+        <div style="display:flex;gap:8px;">
+          <button onclick="clearPathHighlights();clearPathResult();">Clear</button>
+          <button class="success" onclick="runPathFinder()">🔍 Find Path</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="modal-overlay hidden" id="clearCanvasModal">
+    <div class="modal" style="width:380px;">
+      <h2>🗑️ Clear Canvas</h2>
+      <p style="margin:14px 0 8px;font-size:14px;color:#444;line-height:1.5;">
+        This will permanently remove <strong>all floors, rooms, elements, walls, and links</strong> and reset the canvas to a blank state.
+      </p>
+      <p style="font-size:13px;color:#d9534f;margin-bottom:16px;">⚠️ This action cannot be undone.</p>
+      <div class="modal-footer" style="justify-content:space-between;">
+        <button onclick="document.getElementById('clearCanvasModal').classList.add('hidden')">Cancel</button>
+        <button class="danger" onclick="clearCanvas()" style="background:#d9534f;color:#fff;">🗑️ Yes, Clear Everything</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+
+  <script src="state.js"></script>
+  <script src="corridor.js"></script>
+  <script src="pathfinder.js"></script>
+  <script src="renderer.js"></script>
+  <script src="interactions.js"></script>
+  <script src="actions.js"></script>
+  <script src="io.js"></script>
+  <script src="main.js"></script>
+</body>
+
+</html>

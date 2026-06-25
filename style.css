@@ -1,0 +1,1793 @@
+/* =================================================================
+   DESIGN SYSTEM & CUSTOM PROPERTIES
+   ================================================================= */
+:root {
+  --bg-app: #080c14;
+  --bg-panel: #101622;
+  --bg-card: #182030;
+  --bg-input: #0b0f17;
+
+  --text-primary: #f3f4f6;
+  --text-secondary: #9ca3af;
+  --text-muted: #6b7280;
+
+  --border-color: #1f2a3f;
+  --border-focus: #6366f1;
+
+  --accent-primary: #6366f1;
+  --accent-hover: #4f46e5;
+  --accent-success: #10b981;
+  --accent-danger: #f43f5e;
+  --accent-purple: #8b5cf6;
+  --accent-teal: #14b8a6;
+
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.3);
+  --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.4);
+  --shadow-lg: 0 12px 28px rgba(0, 0, 0, 0.5);
+  --shadow-glow: 0 0 15px rgba(99, 102, 241, 0.3);
+
+  --font-family: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
+  --radius-sm: 4px;
+  --radius-md: 8px;
+  --radius-lg: 12px;
+}
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  font-family: var(--font-family);
+  background: var(--bg-app);
+  color: var(--text-primary);
+  overflow: hidden;
+  letter-spacing: -0.015em;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Custom Scrollbars */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--bg-panel);
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--border-color);
+  border-radius: 10px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--text-muted);
+}
+
+.container {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+}
+
+/* =================================================================
+   HEADER & TOOLBAR
+   ================================================================= */
+.header {
+  background: var(--bg-panel);
+  padding: 12px 20px;
+  border-bottom: 1px solid var(--border-color);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  box-shadow: var(--shadow-sm);
+  z-index: 100;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.header h2 {
+  font-size: 16px;
+  font-weight: 700;
+  color: #fff;
+  white-space: nowrap;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.header-icon {
+  color: var(--accent-primary);
+  width: 18px;
+  height: 18px;
+}
+
+.toolbar-group {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.divider {
+  width: 1px;
+  height: 20px;
+  background: var(--border-color);
+  margin: 0 4px;
+}
+
+/* Custom Buttons */
+button {
+  cursor: pointer;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border-color);
+  background: var(--bg-card);
+  color: var(--text-primary);
+  padding: 6px 12px;
+  font-size: 13px;
+  font-weight: 500;
+  font-family: var(--font-family);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: var(--shadow-sm);
+}
+
+button:hover {
+  background: var(--bg-panel);
+  border-color: var(--accent-primary);
+  color: #fff;
+}
+
+button svg {
+  width: 14px;
+  height: 14px;
+  color: var(--text-secondary);
+  transition: color 0.2s;
+}
+
+button:hover svg {
+  color: var(--accent-primary);
+}
+
+/* Button Variants */
+button.primary {
+  background: var(--accent-primary);
+  color: #fff;
+  border-color: var(--accent-primary);
+}
+
+button.primary:hover {
+  background: var(--accent-hover);
+  border-color: var(--accent-hover);
+}
+
+button.primary svg {
+  color: #fff;
+}
+
+button.danger {
+  background: rgba(244, 63, 94, 0.08);
+  color: var(--accent-danger);
+  border-color: rgba(244, 63, 94, 0.3);
+}
+
+button.danger:hover {
+  background: var(--accent-danger);
+  border-color: var(--accent-danger);
+  color: #fff;
+}
+
+button.danger svg {
+  color: var(--accent-danger);
+}
+
+button.danger:hover svg {
+  color: #fff;
+}
+
+button.success {
+  background: var(--accent-success);
+  color: #fff;
+  border-color: var(--accent-success);
+}
+
+button.success:hover {
+  background: #059669;
+  border-color: #059669;
+}
+
+button.success svg {
+  color: #fff;
+}
+
+button.merge-btn {
+  background: rgba(245, 158, 11, 0.12);
+  color: #f59e0b;
+  border-color: rgba(245, 158, 11, 0.35);
+}
+
+button.merge-btn:hover {
+  background: #f59e0b;
+  border-color: #f59e0b;
+  color: #fff;
+}
+
+button.merge-btn svg {
+  color: #f59e0b;
+}
+
+button.merge-btn:hover svg {
+  color: #fff;
+}
+
+button.purple {
+  background: var(--accent-purple);
+  color: #fff;
+  border-color: var(--accent-purple);
+}
+
+button.purple:hover {
+  background: #7c3aed;
+  border-color: #7c3aed;
+}
+
+button.purple svg {
+  color: #fff;
+}
+
+button.teal {
+  background: var(--accent-teal);
+  color: #fff;
+  border-color: var(--accent-teal);
+}
+
+button.teal:hover {
+  background: #0d9488;
+  border-color: #0d9488;
+}
+
+button.teal svg {
+  color: #fff;
+}
+
+button.qr-btn {
+  background: var(--bg-card);
+  border-color: var(--border-color);
+}
+
+button.qr-btn:hover {
+  background: #2563eb;
+  border-color: #2563eb;
+}
+
+/* Control labels & elements */
+.control-label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  color: var(--text-secondary);
+  font-weight: 500;
+}
+
+.badge {
+  background: var(--bg-input);
+  color: var(--accent-primary);
+  font-size: 11px;
+  font-weight: 600;
+  padding: 2px 6px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border-color);
+}
+
+/* Inputs and custom switches */
+.switch-container {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+  user-select: none;
+}
+
+.switch-container input[type="checkbox"] {
+  width: 16px;
+  height: 16px;
+  accent-color: var(--accent-primary);
+  cursor: pointer;
+}
+
+.switch-label {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text-secondary);
+}
+
+.dimensions-input-group {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.dimensions-input-group input {
+  width: 58px;
+  background: var(--bg-input);
+  border: 1px solid var(--border-color);
+  color: #fff;
+  border-radius: var(--radius-sm);
+  padding: 4px 6px;
+  font-size: 12px;
+  margin: 0;
+  text-align: center;
+}
+
+.dimensions-input-group input:focus {
+  outline: none;
+  border-color: var(--accent-primary);
+}
+
+.x-sep {
+  color: var(--text-muted);
+  font-size: 11px;
+}
+
+/* =================================================================
+   MAIN APP LAYOUT
+   ================================================================= */
+.main {
+  display: flex;
+  flex: 1;
+  overflow: hidden;
+}
+
+/* =================================================================
+   SIDEBAR & PANELS
+   ================================================================= */
+.sidebar {
+  width: 310px;
+  background: var(--bg-panel);
+  border-right: 1px solid var(--border-color);
+  display: flex;
+  flex-direction: column;
+  z-index: 90;
+  box-shadow: 2px 0 10px rgba(0, 0, 0, 0.2);
+}
+
+.sidebar-scroll {
+  overflow-y: auto;
+  flex: 1;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.panel {
+  background: var(--bg-card);
+  padding: 14px;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--border-color);
+  box-shadow: var(--shadow-sm);
+}
+
+.panel h3 {
+  font-size: 11px;
+  margin-bottom: 12px;
+  color: var(--text-secondary);
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.panel h3 svg {
+  width: 14px;
+  height: 14px;
+  color: var(--accent-primary);
+}
+
+/* Inputs / Selects in panels */
+input,
+select {
+  width: 100%;
+  padding: 8px 10px;
+  background: var(--bg-input);
+  border: 1px solid var(--border-color);
+  color: #fff;
+  border-radius: var(--radius-sm);
+  margin-bottom: 8px;
+  font-size: 13px;
+  transition: all 0.2s;
+  font-family: var(--font-family);
+}
+
+input:focus,
+select:focus {
+  outline: none;
+  border-color: var(--accent-primary);
+  box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.15);
+}
+
+input[type="range"] {
+  height: 6px;
+  background: var(--bg-input);
+  border: none;
+  margin: 8px 0;
+  cursor: pointer;
+  accent-color: var(--accent-primary);
+}
+
+input[type="color"] {
+  height: 34px;
+  padding: 2px;
+  cursor: pointer;
+  border-radius: var(--radius-sm);
+}
+
+.row {
+  display: flex;
+  gap: 8px;
+}
+
+label {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text-secondary);
+  display: block;
+  margin-bottom: 4px;
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
+}
+
+.space-add-btn {
+  width: 100%;
+  margin-bottom: 8px;
+  padding: 8px;
+}
+
+.secondary-action-btn {
+  width: 100%;
+  margin-top: 8px;
+  background: transparent;
+  border: 1px dashed var(--border-color);
+  color: var(--text-secondary);
+}
+
+.secondary-action-btn:hover {
+  border-style: solid;
+  border-color: var(--accent-primary);
+  color: #fff;
+}
+
+.empty-state {
+  font-size: 11px;
+  color: var(--text-muted);
+  text-align: center;
+  padding: 12px 8px;
+  background: var(--bg-input);
+  border-radius: var(--radius-sm);
+  border: 1px dashed var(--border-color);
+  line-height: 1.4;
+}
+
+.hint-box {
+  display: flex;
+  gap: 8px;
+  font-size: 11px;
+  color: var(--accent-purple);
+  background: rgba(139, 92, 246, 0.08);
+  border: 1px solid rgba(139, 92, 246, 0.2);
+  border-radius: var(--radius-sm);
+  padding: 8px;
+  margin-top: 8px;
+  line-height: 1.4;
+}
+
+/* Properties Specifics */
+.properties-panel {
+  border-color: rgba(99, 102, 241, 0.3);
+  background: rgba(24, 32, 48, 0.95);
+  box-shadow: var(--shadow-glow);
+}
+
+.properties-panel h3 {
+  color: #fff;
+}
+
+.control-row {
+  margin-bottom: 8px;
+}
+
+.slider-group {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.checkbox-container {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+  margin-bottom: 8px;
+  user-select: none;
+}
+
+.checkbox-container input {
+  width: 14px;
+  height: 14px;
+  margin: 0;
+  accent-color: var(--accent-primary);
+}
+
+.checkbox-label {
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--text-primary);
+  text-transform: none;
+}
+
+.stair-link-btn,
+.universal-link-btn {
+  width: 100%;
+  margin-top: 8px;
+  font-weight: 600;
+}
+
+.panel-divider {
+  border: 0;
+  border-top: 1px solid var(--border-color);
+  margin: 12px 0;
+}
+
+/* Instructions */
+.instructions-list {
+  font-size: 11px;
+  padding-left: 14px;
+  color: var(--text-secondary);
+  line-height: 1.6;
+}
+
+.instructions-list li {
+  margin-bottom: 6px;
+}
+
+.instructions-list b {
+  color: #fff;
+}
+
+/* =================================================================
+   CANVAS WORKSPACE
+   ================================================================= */
+.canvas-container {
+  flex: 1;
+  background: #0b0e14;
+  overflow: hidden;
+  position: relative;
+  cursor: grab;
+  user-select: none;
+  box-shadow: inset 0 0 40px rgba(0, 0, 0, 0.5);
+}
+
+.canvas-container:active {
+  cursor: grabbing;
+}
+
+.canvas-wrap {
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.4);
+  background: #0f121d;
+  transform-origin: 0 0;
+  position: absolute;
+}
+
+#canvas {
+  position: relative;
+  width: 3000px;
+  height: 2400px;
+  background: #0f131a;
+  background-image:
+    linear-gradient(rgba(255, 255, 255, 0.012) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255, 255, 255, 0.012) 1px, transparent 1px);
+  background-size: 20px 20px;
+  overflow: hidden;
+}
+
+/* SVG Paths & Arrows styling */
+#pathArrowSvg {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  z-index: 200;
+  overflow: visible;
+}
+
+.path-arrow-line {
+  stroke: var(--accent-danger);
+  stroke-width: 4;
+  fill: none;
+  stroke-dasharray: 12 8;
+  animation: dash-flow 0.6s linear infinite;
+  stroke-linecap: round;
+  filter: drop-shadow(0 0 4px var(--accent-danger));
+}
+
+.path-arrow-line.stair-line {
+  stroke: var(--accent-purple);
+  stroke-dasharray: 10 6;
+  filter: drop-shadow(0 0 4px var(--accent-purple));
+}
+
+.path-arrow-line.universal-line {
+  stroke: var(--accent-teal);
+  stroke-dasharray: 8 6;
+  filter: drop-shadow(0 0 4px var(--accent-teal));
+}
+
+@keyframes dash-flow {
+  to {
+    stroke-dashoffset: -40;
+  }
+}
+
+.path-arrow-head {
+  fill: var(--accent-danger);
+}
+
+.path-arrow-head.stair-head {
+  fill: var(--accent-purple);
+}
+
+.path-arrow-head.universal-head {
+  fill: var(--accent-teal);
+}
+
+.path-node-circle {
+  fill: var(--bg-card);
+  stroke-width: 3;
+  filter: drop-shadow(0 2px 6px rgba(0, 0, 0, 0.3));
+}
+
+.path-node-circle.start-circle {
+  stroke: var(--accent-success);
+}
+
+.path-node-circle.end-circle {
+  stroke: var(--accent-danger);
+}
+
+.path-node-circle.mid-circle {
+  stroke: var(--accent-danger);
+}
+
+.path-node-label {
+  font-size: 11px;
+  font-weight: 700;
+  font-family: var(--font-family);
+  fill: #fff;
+  text-anchor: middle;
+  dominant-baseline: middle;
+}
+
+.path-floor-badge {
+  font-size: 11px;
+  font-family: var(--font-family);
+  fill: var(--accent-purple);
+  text-anchor: middle;
+  font-weight: 700;
+  filter: drop-shadow(0 1px 3px rgba(0, 0, 0, 0.5));
+}
+
+/* Floor switching floating panel */
+#pathFloorBar {
+  display: none;
+  position: absolute;
+  top: 16px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: rgba(16, 22, 34, 0.85);
+  backdrop-filter: blur(12px);
+  border: 1px solid var(--border-color);
+  border-radius: 30px;
+  padding: 6px 16px;
+  box-shadow: var(--shadow-lg);
+  z-index: 300;
+  align-items: center;
+  gap: 10px;
+  font-size: 13px;
+}
+
+#pathFloorBar button {
+  border: none;
+  background: rgba(255, 255, 255, 0.06);
+  color: var(--text-secondary);
+  font-size: 11px;
+  font-weight: 700;
+  border-radius: 20px;
+  padding: 4px 12px;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+#pathFloorBar button.active {
+  background: var(--accent-primary);
+  color: #fff;
+  box-shadow: 0 2px 8px rgba(99, 102, 241, 0.4);
+}
+
+#pathFloorBar button:hover:not(.active) {
+  background: rgba(255, 255, 255, 0.15);
+  color: #fff;
+}
+
+/* =================================================================
+   ELEMENTS (ROOMS/SPACES) ON CANVAS
+   ================================================================= */
+.element {
+  position: absolute;
+  cursor: grab;
+  user-select: none;
+  border: 1px solid rgba(0, 0, 0, 0.4);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 2px;
+  will-change: transform, left, top;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.15);
+  transition: box-shadow 0.1s, border-color 0.1s;
+}
+
+.element:hover {
+  border-color: rgba(255, 255, 255, 0.35);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.25);
+}
+
+.element.selected {
+  outline: 2px solid var(--accent-primary);
+  z-index: 100;
+  box-shadow: var(--shadow-glow), 0 8px 20px rgba(0, 0, 0, 0.3);
+}
+
+.element.dragging {
+  cursor: grabbing;
+  opacity: 0.85;
+  z-index: 200;
+  transition: none !important;
+}
+
+.element.path-highlight {
+  outline: 3px solid var(--accent-danger) !important;
+  box-shadow: 0 0 15px rgba(244, 63, 94, 0.6) !important;
+  z-index: 50;
+}
+
+.element.path-start {
+  outline: 3px solid var(--accent-success) !important;
+  box-shadow: 0 0 15px rgba(16, 185, 129, 0.6) !important;
+}
+
+.element.path-end {
+  outline: 3px solid var(--accent-danger) !important;
+  box-shadow: 0 0 15px rgba(244, 63, 94, 0.6) !important;
+}
+
+.element.stair-linked {
+  border: 2px dashed var(--accent-purple) !important;
+}
+
+.element.staircase-pattern {
+  background-image: repeating-linear-gradient(90deg, transparent, transparent 14px, rgba(0, 0, 0, 0.15) 15px, rgba(0, 0, 0, 0.15) 16px) !important;
+}
+
+/* Shaped Corridors */
+.element.corridor-shaped {
+  background: transparent !important;
+  border: none !important;
+  outline: none !important;
+  box-shadow: none !important;
+}
+
+.element.corridor-shaped.selected svg .corridor-shape {
+  stroke: var(--accent-primary) !important;
+  stroke-width: 2px !important;
+  filter: drop-shadow(0 0 4px var(--accent-primary));
+}
+
+/* Entry/Exit Points */
+.element.entry-exit-element {
+  border-radius: 50% !important;
+  border: 2px solid #ffffff !important;
+  box-shadow: 0 0 8px rgba(20, 184, 166, 0.6) !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+}
+
+.element.entry-exit-element::after {
+  content: '';
+  width: 6px;
+  height: 6px;
+  background: #fff;
+  border-radius: 50%;
+}
+
+.element.entry-exit-element.selected .resize {
+  display: none !important;
+}
+
+/* Waypoint Elements */
+.element.waypoint-element {
+  border-radius: 50% !important;
+  border: 2px solid #ffffff !important;
+  box-shadow: 0 0 8px rgba(59, 130, 246, 0.6) !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+}
+
+.element.waypoint-element::after {
+  content: '';
+  width: 6px;
+  height: 6px;
+  background: #fff;
+  border-radius: 50%;
+}
+
+.element.waypoint-element.selected .resize {
+  display: none !important;
+}
+
+/* Text Elements */
+.element.text-element {
+  background-color: transparent !important;
+  border: 1px dashed rgba(255, 255, 255, 0.25) !important;
+  box-shadow: none !important;
+}
+
+.element.text-element:hover {
+  border-color: rgba(255, 255, 255, 0.5) !important;
+}
+
+.element.text-element.selected {
+  border: 1.5px solid var(--accent-primary) !important;
+  box-shadow: var(--shadow-glow) !important;
+}
+
+.element.text-element .label {
+  font-size: 14px !important;
+  color: var(--text-primary) !important;
+  white-space: normal !important;
+  overflow: visible !important;
+}
+
+/* Snap Magnet Guides */
+.snap-guide-v {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 1px;
+  border-left: 1.5px dashed #6366f1;
+  pointer-events: none;
+  z-index: 1000;
+}
+
+.snap-guide-h {
+  position: absolute;
+  left: 0;
+  right: 0;
+  height: 1px;
+  border-top: 1.5px dashed #6366f1;
+  pointer-events: none;
+  z-index: 1000;
+}
+
+/* =================================================================
+   WALLS & DRAWING
+   ================================================================= */
+.wall-element {
+  position: absolute;
+  background: #334155;
+  cursor: pointer;
+  user-select: none;
+  z-index: 15;
+  transition: background 0.1s, box-shadow 0.1s;
+  border-radius: 2px;
+  border: 1px solid rgba(0, 0, 0, 0.2);
+}
+
+.wall-element:hover {
+  background: #475569;
+  box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.2);
+}
+
+.wall-element.selected {
+  background: var(--accent-primary);
+  box-shadow: 0 0 0 2px #fff, var(--shadow-glow);
+  outline: none;
+}
+
+.wall-element .wall-del-btn {
+  position: absolute;
+  top: -12px;
+  right: -12px;
+  background: var(--accent-danger);
+  color: #fff;
+  font-size: 10px;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  font-weight: 700;
+  border: 1px solid rgba(0, 0, 0, 0.1);
+  z-index: 30;
+  box-shadow: var(--shadow-sm);
+  padding: 0;
+}
+
+.wall-element.selected .wall-del-btn {
+  display: flex;
+}
+
+.wall-element .wall-resize-end {
+  position: absolute;
+  background: #fff;
+  border: 2px solid var(--accent-primary);
+  border-radius: 50%;
+  width: 10px;
+  height: 10px;
+  z-index: 20;
+  display: none;
+}
+
+.wall-element.selected .wall-resize-end {
+  display: block;
+}
+
+#wallToolBtn.active {
+  background: var(--accent-primary) !important;
+  color: #fff !important;
+  border-color: var(--accent-primary) !important;
+  box-shadow: var(--shadow-glow);
+}
+
+#wallDrawPreview {
+  position: absolute;
+  background: rgba(99, 102, 241, 0.2);
+  border: 2px dashed var(--accent-primary);
+  pointer-events: none;
+  z-index: 500;
+  display: none;
+  border-radius: 2px;
+}
+
+/* =================================================================
+   RESIZE HANDLES
+   ================================================================= */
+.resize {
+  width: 10px;
+  height: 10px;
+  background: #fff;
+  border: 2px solid var(--accent-primary);
+  border-radius: 50%;
+  position: absolute;
+  z-index: 150;
+  display: none;
+}
+
+.element.selected .resize {
+  display: block;
+}
+
+.resize.nw {
+  left: -5px;
+  top: -5px;
+  cursor: nw-resize;
+}
+
+.resize.ne {
+  right: -5px;
+  top: -5px;
+  cursor: ne-resize;
+}
+
+.resize.sw {
+  left: -5px;
+  bottom: -5px;
+  cursor: sw-resize;
+}
+
+.resize.se {
+  right: -5px;
+  bottom: -5px;
+  cursor: se-resize;
+}
+
+.resize.n {
+  left: 50%;
+  top: -5px;
+  transform: translateX(-50%);
+  cursor: n-resize;
+  border-radius: 3px;
+  width: 14px;
+  height: 8px;
+}
+
+.resize.s {
+  left: 50%;
+  bottom: -5px;
+  transform: translateX(-50%);
+  cursor: s-resize;
+  border-radius: 3px;
+  width: 14px;
+  height: 8px;
+}
+
+.resize.w {
+  top: 50%;
+  left: -5px;
+  transform: translateY(-50%);
+  cursor: w-resize;
+  border-radius: 3px;
+  width: 8px;
+  height: 14px;
+}
+
+.resize.e {
+  top: 50%;
+  right: -5px;
+  transform: translateY(-50%);
+  cursor: e-resize;
+  border-radius: 3px;
+  width: 8px;
+  height: 14px;
+}
+
+/* =================================================================
+   LABELS & BADGES
+   ================================================================= */
+.label {
+  font-size: 11px;
+  font-weight: 600;
+  text-align: center;
+  color: #1e293b;
+  pointer-events: none;
+  padding: 2px;
+  line-height: 1.2;
+  user-select: none;
+  width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.stair-badge {
+  position: absolute;
+  top: -10px;
+  right: -6px;
+  background: var(--accent-purple);
+  color: #fff;
+  font-size: 9px;
+  padding: 1px 6px;
+  border-radius: 10px;
+  pointer-events: none;
+  white-space: nowrap;
+  z-index: 200;
+  font-weight: 700;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+}
+
+.dims-tag {
+  position: absolute;
+  bottom: -28px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: var(--bg-card);
+  border: 1px solid var(--border-color);
+  color: var(--text-primary);
+  font-size: 10px;
+  font-weight: 600;
+  padding: 2px 8px;
+  border-radius: 4px;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.2s;
+  white-space: nowrap;
+  z-index: 300;
+  box-shadow: var(--shadow-sm);
+}
+
+.element.dragging .dims-tag,
+.element.resizing .dims-tag {
+  opacity: 1;
+}
+
+/* Path Order Number Badge */
+.path-num {
+  position: absolute;
+  top: -10px;
+  left: -6px;
+  background: var(--accent-danger);
+  color: #fff;
+  font-size: 10px;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none;
+  z-index: 300;
+  font-weight: 700;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3);
+}
+
+.path-num.start-num {
+  background: var(--accent-success);
+}
+
+/* =================================================================
+   FLOOR LIST & STRUCTURE
+   ================================================================= */
+.item {
+  padding: 10px 12px;
+  margin-bottom: 6px;
+  background: var(--bg-input);
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  border-left: 3px solid transparent;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text-secondary);
+  transition: all 0.15s;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.item:hover {
+  background: rgba(255, 255, 255, 0.04);
+  color: #fff;
+}
+
+.item.current {
+  background: rgba(99, 102, 241, 0.06);
+  border-left-color: var(--accent-primary);
+  color: #fff;
+  font-weight: 600;
+}
+
+.item-sub {
+  margin-left: 16px;
+  font-size: 12px;
+  background: transparent;
+  padding: 8px 12px;
+}
+
+.item-sub.current {
+  background: rgba(99, 102, 241, 0.04);
+}
+
+/* =================================================================
+   TOAST NOTIFICATION
+   ================================================================= */
+#toast {
+  position: fixed;
+  bottom: 24px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: rgba(16, 22, 34, 0.9);
+  backdrop-filter: blur(8px);
+  border: 1px solid var(--border-color);
+  color: #fff;
+  padding: 10px 24px;
+  border-radius: 30px;
+  font-size: 13px;
+  font-weight: 600;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.3s, transform 0.3s;
+  z-index: 2000;
+  box-shadow: var(--shadow-lg);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+/* =================================================================
+   MODALS & DIALOGS
+   ================================================================= */
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.6);
+  backdrop-filter: blur(4px);
+  z-index: 3000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  animation: fadeIn 0.2s ease-out;
+}
+
+.modal-overlay.hidden {
+  display: none;
+}
+
+.modal {
+  background: var(--bg-card);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-lg);
+  padding: 24px;
+  width: 440px;
+  max-width: 90vw;
+  box-shadow: var(--shadow-lg);
+  max-height: 80vh;
+  overflow-y: auto;
+  animation: slideUp 0.2s ease-out;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes slideUp {
+  from {
+    transform: translateY(20px);
+    opacity: 0;
+  }
+
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+.modal h2 {
+  font-size: 16px;
+  font-weight: 700;
+  margin-bottom: 16px;
+  color: #fff;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.modal-section {
+  margin-bottom: 16px;
+}
+
+.modal-section label {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-secondary);
+  margin-bottom: 6px;
+  display: block;
+}
+
+.modal select {
+  margin-bottom: 0;
+}
+
+.modal-footer {
+  display: flex;
+  gap: 8px;
+  margin-top: 24px;
+  justify-content: flex-end;
+}
+
+/* Universal Connections Chip */
+.stair-link-chip,
+.universal-link-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: var(--bg-input);
+  border: 1px solid var(--border-color);
+  border-radius: 20px;
+  padding: 4px 10px;
+  font-size: 11px;
+  color: var(--text-primary);
+  margin: 2px;
+  font-weight: 500;
+}
+
+.stair-link-chip .remove-link,
+.universal-link-chip .remove-link {
+  cursor: pointer;
+  color: var(--accent-danger);
+  font-weight: 700;
+  margin-left: 2px;
+}
+
+.stair-link-chip .remove-link:hover,
+.universal-link-chip .remove-link:hover {
+  color: #ff3366;
+}
+
+.stair-link-row,
+.universal-link-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px;
+  background: var(--bg-input);
+  border-radius: var(--radius-sm);
+  margin-bottom: 6px;
+  border: 1px solid var(--border-color);
+  font-size: 12px;
+}
+
+.stair-link-row .link-icon {
+  color: var(--accent-purple);
+  font-size: 14px;
+}
+
+.universal-link-row .link-icon {
+  color: var(--accent-teal);
+  font-size: 14px;
+}
+
+.stair-link-row button,
+.universal-link-row button {
+  padding: 4px 8px;
+  font-size: 11px;
+}
+
+.stair-props,
+.universal-link-props {
+  background: var(--bg-input);
+  border: 1px dashed var(--border-color);
+  border-radius: var(--radius-sm);
+  padding: 10px;
+  margin-top: 10px;
+}
+
+.stair-props h4,
+.universal-link-props h4 {
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin-bottom: 8px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.stair-props h4 {
+  color: var(--accent-purple);
+}
+
+.universal-link-props h4 {
+  color: var(--accent-teal);
+}
+
+/* Path step visualizer */
+.path-step {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 10px;
+  border-radius: var(--radius-sm);
+  margin-bottom: 6px;
+  font-size: 12px;
+  border: 1px solid var(--border-color);
+}
+
+.path-step.normal {
+  background: rgba(99, 102, 241, 0.04);
+  border-color: rgba(99, 102, 241, 0.2);
+}
+
+.path-step.stair-step {
+  background: rgba(139, 92, 246, 0.04);
+  border-color: rgba(139, 92, 246, 0.2);
+}
+
+.path-step.floor-change {
+  background: rgba(20, 184, 166, 0.04);
+  border-color: rgba(20, 184, 166, 0.2);
+}
+
+.path-step .step-num {
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: var(--accent-primary);
+  color: #fff;
+  font-size: 10px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.path-step.stair-step .step-num {
+  background: var(--accent-purple);
+}
+
+.path-step.floor-change .step-num {
+  background: var(--accent-teal);
+}
+
+.path-step .step-text {
+  line-height: 1.4;
+}
+
+.path-step .step-text b {
+  display: block;
+  color: #fff;
+}
+
+.path-step .step-text span {
+  color: var(--text-secondary);
+  font-size: 11px;
+}
+
+.path-empty {
+  text-align: center;
+  padding: 24px;
+  color: var(--text-muted);
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+.path-summary {
+  background: rgba(16, 185, 129, 0.08);
+  border: 1px solid rgba(16, 185, 129, 0.3);
+  border-radius: var(--radius-sm);
+  padding: 12px;
+  margin-bottom: 14px;
+  font-size: 12px;
+  line-height: 1.5;
+  color: var(--text-primary);
+}
+
+.path-summary strong {
+  color: var(--accent-success);
+}
+
+.element.universal-linked {
+  border: 2px dashed var(--accent-teal) !important;
+}
+
+.universal-badge {
+  position: absolute;
+  bottom: -10px;
+  right: -6px;
+  background: var(--accent-teal);
+  color: #fff;
+  font-size: 9px;
+  padding: 1px 6px;
+  border-radius: 10px;
+  pointer-events: none;
+  white-space: nowrap;
+  z-index: 200;
+  font-weight: 700;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+}
+
+/* =================================================================
+   3D VIEW MODE STYLES
+   ================================================================= */
+.canvas-container.mode-3d {
+  perspective: 1600px;
+  perspective-origin: 50% 50%;
+}
+
+.canvas-3d-viewport {
+  width: 100%;
+  height: 100%;
+  transform-origin: center center;
+  transform-style: preserve-3d;
+  transition: transform 0.6s cubic-bezier(0.25, 1, 0.5, 1);
+}
+
+.mode-3d .canvas-3d-viewport {
+  transform: rotateX(52deg) rotateZ(-30deg);
+}
+
+.canvas-wrap,
+#canvas {
+  transform-style: preserve-3d;
+}
+
+.mode-3d #canvas {
+  overflow: visible !important;
+}
+
+/* 3D Box Extrusion Variables */
+.canvas-container.mode-3d .element,
+.canvas-container.mode-3d .wall-element {
+  transform-style: preserve-3d;
+  transition: transform 0.6s cubic-bezier(0.25, 1, 0.5, 1);
+}
+
+.canvas-container.mode-3d .element {
+  --z-depth: 12px;
+  transform: translateZ(var(--z-depth));
+  box-shadow: 0 0 10px rgba(0,0,0,0.2);
+}
+
+.canvas-container.mode-3d .door-element {
+  --z-depth: 80px;
+  transform: translateZ(var(--z-depth));
+}
+
+.canvas-container.mode-3d .window-element {
+  --z-depth: 50px;
+  transform: translateZ(var(--z-depth));
+}
+
+.canvas-container.mode-3d .entry-exit-element {
+  --z-depth: 1px;
+  transform: translateZ(var(--z-depth));
+  border-radius: 50% !important;
+}
+
+.canvas-container.mode-3d .entry-exit-element > .faces,
+.canvas-container.mode-3d .entry-exit-element::after,
+.canvas-container.mode-3d .entry-exit-element::before {
+  display: none !important;
+}
+
+.canvas-container.mode-3d .waypoint-element {
+  --z-depth: 1px;
+  transform: translateZ(var(--z-depth));
+  border-radius: 50% !important;
+}
+
+.canvas-container.mode-3d .waypoint-element > .faces,
+.canvas-container.mode-3d .waypoint-element::after,
+.canvas-container.mode-3d .waypoint-element::before {
+  display: none !important;
+}
+
+.canvas-container.mode-3d .text-element {
+  --z-depth: 1px;
+  transform: translateZ(var(--z-depth));
+  background: transparent !important;
+  border: none !important;
+}
+
+.canvas-container.mode-3d .text-element > .faces,
+.canvas-container.mode-3d .text-element::after,
+.canvas-container.mode-3d .text-element::before {
+  display: none !important;
+}
+
+.canvas-container.mode-3d .text-element .label {
+  color: #ffffff !important;
+}
+
+.canvas-container.mode-3d .staircase-element {
+  --z-depth: 0px;
+  background: transparent !important;
+  transform: translateZ(var(--z-depth));
+}
+
+.canvas-container.mode-3d .staircase-element > .faces,
+.canvas-container.mode-3d .staircase-element::after,
+.canvas-container.mode-3d .staircase-element::before {
+  display: none !important;
+}
+
+.canvas-container.mode-3d .stair-step-block {
+  position: absolute;
+  transform-style: preserve-3d;
+  transition: transform 0.6s cubic-bezier(0.25, 1, 0.5, 1);
+}
+
+.canvas-container.mode-3d .wall-element {
+  --z-depth: 40px;
+  transform: translateZ(var(--z-depth));
+  background: #3f4e62 !important;
+  box-shadow: none;
+}
+
+/* Base Side Faces */
+.canvas-container.mode-3d .element::after,
+.canvas-container.mode-3d .element::before,
+.canvas-container.mode-3d .wall-element::after,
+.canvas-container.mode-3d .wall-element::before,
+.canvas-container.mode-3d .stair-step-block::after,
+.canvas-container.mode-3d .stair-step-block::before,
+.canvas-container.mode-3d .faces::after,
+.canvas-container.mode-3d .faces::before {
+  content: '';
+  position: absolute;
+  background: inherit;
+  background-color: inherit;
+  box-sizing: border-box;
+}
+
+/* Ensure step side walls don't inherit the striped pattern */
+.canvas-container.mode-3d .stair-step-block::after,
+.canvas-container.mode-3d .stair-step-block::before,
+.canvas-container.mode-3d .stair-step-block .faces::after,
+.canvas-container.mode-3d .stair-step-block .faces::before {
+  background-image: none !important;
+}
+
+/* Bottom Face (Front) */
+.canvas-container.mode-3d .element::after,
+.canvas-container.mode-3d .wall-element::after,
+.canvas-container.mode-3d .stair-step-block::after {
+  left: 0;
+  bottom: calc(-1 * var(--z-depth));
+  width: 100%;
+  height: var(--z-depth);
+  transform: rotateX(-90deg);
+  transform-origin: top;
+  filter: brightness(0.65);
+}
+
+/* Left Face */
+.canvas-container.mode-3d .element::before,
+.canvas-container.mode-3d .wall-element::before,
+.canvas-container.mode-3d .stair-step-block::before {
+  left: calc(-1 * var(--z-depth));
+  top: 0;
+  width: var(--z-depth);
+  height: 100%;
+  transform: rotateY(-90deg);
+  transform-origin: right;
+  filter: brightness(0.5);
+}
+
+/* Container for additional faces */
+.faces {
+  position: absolute;
+  top: 0; left: 0; right: 0; bottom: 0;
+  pointer-events: none;
+  transform-style: preserve-3d;
+  background: inherit;
+  border-radius: inherit;
+}
+.canvas-container:not(.mode-3d) .faces,
+.canvas-container:not(.mode-3d) .stair-step-block {
+  display: none;
+}
+
+/* Right Face */
+.canvas-container.mode-3d .faces::before {
+  right: calc(-1 * var(--z-depth));
+  top: 0;
+  width: var(--z-depth);
+  height: 100%;
+  transform: rotateY(90deg);
+  transform-origin: left;
+  filter: brightness(0.85);
+}
+
+/* Top Face (Back) */
+.canvas-container.mode-3d .faces::after {
+  left: 0;
+  top: calc(-1 * var(--z-depth));
+  width: 100%;
+  height: var(--z-depth);
+  transform: rotateX(90deg);
+  transform-origin: bottom;
+  filter: brightness(0.4);
+}
+
+/* 3D Floating SVG Pathfinder Overlay */
+.canvas-container.mode-3d #pathArrowSvg {
+  transform: translateZ(35px);
+  filter: drop-shadow(0 8px 12px rgba(244, 63, 94, 0.35));
+}
+
+/* Lock interactions in 3D Mode */
+.canvas-container.mode-3d .resize {
+  display: none !important;
+}
+
+.canvas-container.mode-3d .wall-resize-end {
+  display: none !important;
+}
+
+.canvas-container.mode-3d .wall-del-btn {
+  display: none !important;
+}
+
+/* 3D Floating Room Label Style */
+.canvas-container.mode-3d .label {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform-origin: center center;
+  transform: translate(-50%, -50%) translateZ(20px) rotateZ(calc(var(--el-rot, 0deg) * -1)) rotateZ(calc(var(--cam-rz, -30deg) * -1)) rotateX(calc(var(--cam-rx, 52deg) * -1));
+  width: auto;
+  min-width: 60px;
+  max-width: 160px;
+  padding: 4px 10px;
+  margin: 0;
+  background: rgba(15, 23, 42, 0.85); /* Dark slate */
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+  color: #ffffff;
+  border: 1px solid rgba(99, 102, 241, 0.45); /* Glowing accent border */
+  border-radius: 8px;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+  box-shadow: 
+    0 1px 0px rgba(255, 255, 255, 0.15) inset, /* Inner top highlights */
+    0 6px 12px rgba(0, 0, 0, 0.45),          /* Ambient backdrop shadow */
+    0 0 10px rgba(99, 102, 241, 0.15);       /* Subtle glow */
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.6);
+  white-space: nowrap;
+  pointer-events: none;
+  z-index: 1000;
+}
+
+/* Add a beautiful downward pointing arrow (map pin pointer) to anchor the label to the room center */
+.canvas-container.mode-3d .label::after {
+  content: '';
+  position: absolute;
+  bottom: -6px;
+  left: 50%;
+  transform: translate3d(-50%, 0, 0);
+  border-width: 6px 6px 0;
+  border-style: solid;
+  border-color: rgba(15, 23, 42, 0.85) transparent transparent;
+  display: block;
+  width: 0;
+  height: 0;
+}
+
+/* Disable transitions while dragging/panning to prevent massive lag */
+.is-dragging .canvas-3d-viewport,
+.is-dragging .element,
+.is-dragging .wall-element,
+.is-dragging .stair-step-block {
+  transition: none !important;
+}
+
+/* =================================================================
+   ENTRY / EXIT POINT MARKERS
+   ================================================================= */
+.element.entrypoint-shaped {
+  border-radius: 50% !important;
+  box-shadow: 0 0 10px rgba(16, 185, 129, 0.5) !important;
+  border: 2px solid #fff !important;
+}
+
+.element.exitpoint-shaped {
+  border-radius: 50% !important;
+  box-shadow: 0 0 10px rgba(244, 63, 94, 0.5) !important;
+  border: 2px solid #fff !important;
+}
+
+.canvas-container.mode-3d .entrypoint-shaped,
+.canvas-container.mode-3d .exitpoint-shaped {
+  --z-depth: 4px;
+  border-radius: 50% !important;
+}
+
+.canvas-container.mode-3d .entrypoint-shaped .faces,
+.canvas-container.mode-3d .exitpoint-shaped .faces {
+  display: none !important;
+}
+
