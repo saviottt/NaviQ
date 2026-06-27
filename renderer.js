@@ -236,7 +236,7 @@ function renderCanvas() {
         }
 
         let zDepth = 12;
-        if (el.type === 'door' || el.name === 'Door') zDepth = el.height3D !== undefined ? el.height3D : 80;
+        if (el.type === 'door' || el.name === 'Door') zDepth = el.height3D !== undefined ? el.height3D : 40;
         else if (el.type === 'window' || el.name === 'Window') zDepth = el.height3D !== undefined ? el.height3D : 50;
         else if (el.type === 'entry_exit' || el.name === 'Entry/Exit') zDepth = el.height3D !== undefined ? el.height3D : 1;
         else if (el.type === 'waypoint' || el.name === 'Waypoint') zDepth = el.height3D !== undefined ? el.height3D : 1;
