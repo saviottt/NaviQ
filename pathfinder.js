@@ -116,18 +116,55 @@ function wallBlocksEdge(a, b, floorId) {
   return false;
 }
 
+
+/* =================================================================
+   PATH FINDER (Dijkstra across floors)
+   ================================================================= */
+function rectCenter(el) {
+  return { x: el.x + el.w / 2, y: el.y + el.h / 2 };
+}
+
+function rectsOverlapOrTouch(a, b, tolerance = 5) {
+  return !(a.x + a.w + tolerance < b.x ||
+    b.x + b.w + tolerance < a.x ||
+    a.y + a.h + tolerance < b.y ||
+    b.y + b.h + tolerance < a.y);
+}
+
+function dist(a, b) {
+  const ca = rectCenter(a), cb = rectCenter(b);
+  return Math.sqrt((ca.x - cb.x) ** 2 + (ca.y - cb.y) ** 2);
+}
+
+
+
 function buildGraph() {
   const adj = new Map();
   const allEls = allElements().filter(r => r.el.type !== 'text');
 
   allEls.forEach(r => adj.set(r.el.id, []));
-
   state.floors.forEach(f => {
     const floorEls = f.blocks.flatMap(b => b.elements).filter(el => el.type !== 'text');
+
+    const hasWaypointsCorridorsArr = floorEls.filter(c => {
+       const type = (c.type || '').toLowerCase();
+       const name = (c.name || '').toLowerCase();
+       const isCorridorOrHall = type === 'corridor' || type.startsWith('corridor-') || type === 'hall' || 
+                                name.includes('stair hall') || name.includes('stair lobby') || name.includes('vertical junction');
+       if (isCorridorOrHall) {
+          return floorEls.some(el => el.type === 'waypoint' && rectsOverlapOrTouch(c, el));
+       }
+       return false;
+    });
+    const hasWaypointsSet = new Set(hasWaypointsCorridorsArr.map(c => c.id));
 
     for (let i = 0; i < floorEls.length; i++) {
       for (let j = i + 1; j < floorEls.length; j++) {
         const a = floorEls[i], bEl = floorEls[j];
+
+        // NEW LOGIC: If both overlap, but one is a Corridor that has waypoints, SKIP the standard connection!
+        if (hasWaypointsSet && (hasWaypointsSet.has(a.id) || hasWaypointsSet.has(bEl.id))) continue;
+
         if (!rectsOverlapOrTouch(a, bEl)) continue;
 
         const blocked = wallBlocksEdge(a, bEl, f.id);
@@ -139,14 +176,14 @@ function buildGraph() {
         const edgePoint = getSharedWallMidpoint(a, bEl);
 
         const aCenter = rectCenter(a);
+        const bCenter = rectCenter(bEl);
 
-        const d = Math.sqrt(
-          (aCenter.x - edgePoint.x) ** 2 +
-          (aCenter.y - edgePoint.y) ** 2
-        );
+        const dA = Math.sqrt((aCenter.x - edgePoint.x) ** 2 + (aCenter.y - edgePoint.y) ** 2);
+        const dB = Math.sqrt((bCenter.x - edgePoint.x) ** 2 + (bCenter.y - edgePoint.y) ** 2);
+
         adj.get(a.id).push({
           neighborId: bEl.id,
-          cost: d,
+          cost: dA,
           type: 'same',
           meta: {
             floorId: f.id,
@@ -157,7 +194,7 @@ function buildGraph() {
 
         adj.get(bEl.id).push({
           neighborId: a.id,
-          cost: d,
+          cost: dB,
           type: 'same',
           meta: {
             floorId: f.id,
@@ -167,6 +204,114 @@ function buildGraph() {
         });
       }
     }
+
+    // --- NEW LOGIC: Waypoint MST for Corridors ---
+    // Group into clusters of overlapping corridors
+    const clusters = [];
+    const visitedCorr = new Set();
+    hasWaypointsCorridorsArr.forEach(c => {
+       if (visitedCorr.has(c.id)) return;
+       const cluster = [];
+       const q = [c];
+       visitedCorr.add(c.id);
+       while (q.length > 0) {
+          const curr = q.shift();
+          cluster.push(curr);
+          hasWaypointsCorridorsArr.forEach(otherC => {
+             if (!visitedCorr.has(otherC.id) && rectsOverlapOrTouch(curr, otherC)) {
+                visitedCorr.add(otherC.id);
+                q.push(otherC);
+             }
+          });
+       }
+       clusters.push(cluster);
+     });
+
+     clusters.forEach(cluster => {
+        const wps = new Set();
+        const others = new Set();
+        cluster.forEach(c => {
+           floorEls.forEach(el => {
+              if (hasWaypointsSet.has(el.id)) return; // Skip other waypoint corridors
+              if (rectsOverlapOrTouch(c, el)) {
+                 const blocked = wallBlocksEdge(c, el, f.id);
+                 if (blocked) {
+                   const hasDoorOpening = doorOnSharedEdge(c, el, floorEls);
+                   if (!hasDoorOpening) return;
+                 }
+                 if (el.type === 'waypoint') wps.add(el);
+                 else others.add(el);
+              }
+           });
+        });
+        
+        const wpsArr = Array.from(wps);
+        const othersArr = Array.from(others);
+        
+        // Connect others to nearest wp (with wall blocking checks)
+        othersArr.forEach(other => {
+           let nearestWp = null;
+           let minDist = Infinity;
+           wpsArr.forEach(wp => {
+              const isOtherDoor = ['door', 'entry_exit'].includes((other.type || '').toLowerCase());
+              if (!isOtherDoor && wallBlocksLine(rectCenter(other), rectCenter(wp), f.id, floorEls)) {
+                 const hasDoor = findTransitionElement(other, wp, floorEls);
+                 if (!hasDoor) return; // Blocked, skip this waypoint
+              }
+              const d = dist(other, wp);
+              if (d < minDist) { minDist = d; nearestWp = wp; }
+           });
+           if (nearestWp) {
+              const edgePoint = getSharedWallMidpoint(other, nearestWp);
+              const otherCenter = rectCenter(other);
+              const wpCenter = rectCenter(nearestWp);
+              const dOther = Math.sqrt((otherCenter.x - edgePoint.x) ** 2 + (otherCenter.y - edgePoint.y) ** 2);
+              const dWp = Math.sqrt((wpCenter.x - edgePoint.x) ** 2 + (wpCenter.y - edgePoint.y) ** 2);
+
+              adj.get(other.id).push({
+                neighborId: nearestWp.id, cost: dOther, type: 'same', 
+                meta: { floorId: f.id, floorName: f.name, transition: edgePoint }
+              });
+              adj.get(nearestWp.id).push({
+                neighborId: other.id, cost: dWp, type: 'same', 
+                meta: { floorId: f.id, floorName: f.name, transition: edgePoint }
+              });
+           }
+        });
+
+        // MST for waypoints (with wall blocking checks)
+        if (wpsArr.length > 1) {
+           const edges = [];
+           for (let i = 0; i < wpsArr.length; i++) {
+              for (let j = i + 1; j < wpsArr.length; j++) {
+                 if (!wallBlocksLine(rectCenter(wpsArr[i]), rectCenter(wpsArr[j]), f.id, floorEls)) {
+                    edges.push({ a: wpsArr[i], b: wpsArr[j], d: dist(wpsArr[i], wpsArr[j]) });
+                 }
+              }
+           }
+           edges.sort((e1, e2) => e1.d - e2.d);
+           const parent = {};
+           const find = (i) => { if (parent[i] === undefined) return i; return parent[i] = find(parent[i]); };
+           const union = (i, j) => {
+              const rootI = find(i); const rootJ = find(j);
+              if (rootI !== rootJ) { parent[rootI] = rootJ; return true; }
+              return false;
+           };
+           
+           edges.forEach(e => {
+              if (union(e.a.id, e.b.id)) {
+                 const edgePoint = getSharedWallMidpoint(e.a, e.b);
+                 const aCenter = rectCenter(e.a);
+                 const bCenter = rectCenter(e.b);
+                 const dA = Math.sqrt((aCenter.x - edgePoint.x) ** 2 + (aCenter.y - edgePoint.y) ** 2);
+                 const dB = Math.sqrt((bCenter.x - edgePoint.x) ** 2 + (bCenter.y - edgePoint.y) ** 2);
+
+                 adj.get(e.a.id).push({ neighborId: e.b.id, cost: dA, type: 'same', meta: { floorId: f.id, floorName: f.name, transition: edgePoint } });
+                 adj.get(e.b.id).push({ neighborId: e.a.id, cost: dB, type: 'same', meta: { floorId: f.id, floorName: f.name, transition: edgePoint } });
+              }
+           });
+        }
+     });
   });
 
   const STAIR_COST = 120;
@@ -213,6 +358,50 @@ function buildGraph() {
   return adj;
 }
 
+function lineSegmentsIntersect(p1, p2, p3, p4) {
+  const dx12 = p2.x - p1.x;
+  const dy12 = p2.y - p1.y;
+  const dx34 = p4.x - p3.x;
+  const dy34 = p4.y - p3.y;
+
+  const denominator = dy34 * dx12 - dx34 * dy12;
+  if (denominator === 0) return false;
+
+  const ua = (dx34 * (p1.y - p3.y) - dy34 * (p1.x - p3.x)) / denominator;
+  const ub = (dx12 * (p1.y - p3.y) - dy12 * (p1.x - p3.x)) / denominator;
+
+  return (ua >= 0 && ua <= 1 && ub >= 0 && ub <= 1);
+}
+
+function lineIntersectsRect(p1, p2, r) {
+  const inRect = (p) => (p.x >= r.x && p.x <= r.x + r.w && p.y >= r.y && p.y <= r.y + r.h);
+  if (inRect(p1) || inRect(p2)) return true;
+
+  const tl = { x: r.x, y: r.y };
+  const tr = { x: r.x + r.w, y: r.y };
+  const bl = { x: r.x, y: r.y + r.h };
+  const br = { x: r.x + r.w, y: r.y + r.h };
+
+  return lineSegmentsIntersect(p1, p2, tl, tr) ||
+         lineSegmentsIntersect(p1, p2, tr, br) ||
+         lineSegmentsIntersect(p1, p2, br, bl) ||
+         lineSegmentsIntersect(p1, p2, bl, tl);
+}
+
+function wallBlocksLine(p1, p2, floorId, floorEls) {
+  const floorWalls = state.walls.filter(w => w.floorId === floorId);
+  for (const wall of floorWalls) {
+    if (lineIntersectsRect(p1, p2, wall)) {
+      const openings = floorEls.filter(el => ['door', 'entry_exit'].includes((el.type || '').toLowerCase()));
+      const intersectsOpening = openings.some(op => lineIntersectsRect(p1, p2, op));
+      if (!intersectsOpening) {
+        return true;
+      }
+    }
+  }
+  return false;
+}
+
 function dijkstra(adj, startId, endId) {
   const dist2 = new Map();
   const prev = new Map();
@@ -248,94 +437,13 @@ function dijkstra(adj, startId, endId) {
   const path = [];
   const edges = [];
   let cur = endId;
-  while (cur !== undefined) {
+  while (cur !== undefined && cur !== null) {
     path.unshift(cur);
     const meta = edgeMeta.get(cur);
     if (meta) edges.unshift({ to: cur, from: prev.get(cur), ...meta });
     cur = prev.get(cur);
   }
   return { path, cost: dist2.get(endId), edges };
-}
-
-function clearPathfinderStops() {
-  const container = document.getElementById('pfStopsContainer');
-  if (container) container.innerHTML = '';
-}
-
-function addPathfinderStop() {
-  const container = document.getElementById('pfStopsContainer');
-  if (!container) return;
-
-  const allEls = allElements();
-  const rooms = allEls.filter(r =>
-    !['door', 'window', 'entry_exit', 'text'].includes(r.el.type?.toLowerCase()) &&
-    !r.el.type?.startsWith('Corridor-') &&
-    r.el.type !== 'Corridor'
-  );
-
-  const row = document.createElement('div');
-  row.className = 'pathfinder-stop-row';
-  row.style.cssText = 'display:flex; gap:6px; align-items:center; margin-top:4px;';
-
-  const select = document.createElement('select');
-  select.className = 'pf-stop-select';
-  select.style.cssText = 'flex:1; margin-bottom:0;';
-  select.onchange = clearPathResult;
-
-  rooms.forEach(r => {
-    const opt = document.createElement('option');
-    opt.value = r.el.id;
-    opt.textContent = elLabel(r);
-    select.appendChild(opt);
-  });
-
-  const delBtn = document.createElement('button');
-  delBtn.className = 'danger';
-  delBtn.style.cssText = 'padding:6px; width:28px; height:28px; display:flex; align-items:center; justify-content:center; flex-shrink:0;';
-  delBtn.innerHTML = '✕';
-  delBtn.onclick = () => {
-    row.remove();
-    clearPathResult();
-  };
-
-  row.appendChild(select);
-  row.appendChild(delBtn);
-  container.appendChild(row);
-
-  if (window.lucide) window.lucide.createIcons();
-}
-
-function openPathFinder() {
-  clearPathHighlights();
-  clearPathfinderStops();
-  const allEls = allElements();
-  const rooms = allEls.filter(r => !['door', 'window', 'entry_exit', 'text'].includes(r.el.type?.toLowerCase()) && !r.el.type?.startsWith('Corridor-') && r.el.type !== 'Corridor');
-
-  const fromSel = document.getElementById('pfFrom');
-  const toSel = document.getElementById('pfTo');
-  fromSel.innerHTML = '';
-  toSel.innerHTML = '';
-
-  rooms.forEach(r => {
-    const opt1 = document.createElement('option');
-    opt1.value = r.el.id;
-    opt1.textContent = elLabel(r);
-    fromSel.appendChild(opt1);
-
-    const opt2 = document.createElement('option');
-    opt2.value = r.el.id;
-    opt2.textContent = elLabel(r);
-    toSel.appendChild(opt2);
-  });
-
-  if (toSel.options.length > 1) toSel.selectedIndex = 1;
-
-  clearPathResult();
-  document.getElementById('pathModal').classList.remove('hidden');
-}
-
-function closePathModal() {
-  document.getElementById('pathModal').classList.add('hidden');
 }
 
 function clearPathResult() {
@@ -370,6 +478,8 @@ function findTransitionElement(a, b, floorEls) {
   return null;
 }
 
+// Find the midpoint of the overlap segment between two touching rectangles
+// Returns a point ON the shared wall — the actual doorway/passage location
 function getSharedWallMidpoint(a, b) {
   const rec = getElById(a.id);
   const isAPassage = isPassage(a);
@@ -512,4 +622,85 @@ function runPathFinder() {
     if (cb) cb.style.display = 'block';
     showToast(`Path found: ${path.length} steps — animating on map`);
   }, 60);
+}
+
+function clearPathfinderStops() {
+  const container = document.getElementById('pfStopsContainer');
+  if (container) container.innerHTML = '';
+}
+
+function addPathfinderStop() {
+  const container = document.getElementById('pfStopsContainer');
+  if (!container) return;
+
+  const allEls = allElements();
+  const rooms = allEls.filter(r =>
+    !['door', 'window', 'entry_exit', 'text', 'waypoint'].includes(r.el.type?.toLowerCase()) &&
+    !r.el.type?.startsWith('Corridor-') &&
+    r.el.type !== 'Corridor'
+  );
+
+  const row = document.createElement('div');
+  row.className = 'pathfinder-stop-row';
+  row.style.cssText = 'display:flex; gap:6px; align-items:center; margin-top:4px;';
+
+  const select = document.createElement('select');
+  select.className = 'pf-stop-select';
+  select.style.cssText = 'flex:1; margin-bottom:0;';
+  select.onchange = clearPathResult;
+
+  rooms.forEach(r => {
+    const opt = document.createElement('option');
+    opt.value = r.el.id;
+    opt.textContent = elLabel(r);
+    select.appendChild(opt);
+  });
+
+  const delBtn = document.createElement('button');
+  delBtn.className = 'danger';
+  delBtn.style.cssText = 'padding:6px; width:28px; height:28px; display:flex; align-items:center; justify-content:center; flex-shrink:0;';
+  delBtn.innerHTML = '<i data-lucide="trash-2" style="width:14px;height:14px;"></i>';
+  delBtn.onclick = () => {
+    row.remove();
+    clearPathResult();
+  };
+
+  row.appendChild(select);
+  row.appendChild(delBtn);
+  container.appendChild(row);
+
+  if (window.lucide) window.lucide.createIcons();
+}
+
+function openPathFinder() {
+  clearPathHighlights();
+  clearPathfinderStops();
+  const allEls = allElements();
+  const rooms = allEls.filter(r => !['door', 'window', 'entry_exit', 'text', 'waypoint'].includes(r.el.type?.toLowerCase()) && !r.el.type?.startsWith('Corridor-') && r.el.type !== 'Corridor');
+
+  const fromSel = document.getElementById('pfFrom');
+  const toSel = document.getElementById('pfTo');
+  fromSel.innerHTML = '';
+  toSel.innerHTML = '';
+
+  rooms.forEach(r => {
+    const opt1 = document.createElement('option');
+    opt1.value = r.el.id;
+    opt1.textContent = elLabel(r);
+    fromSel.appendChild(opt1);
+
+    const opt2 = document.createElement('option');
+    opt2.value = r.el.id;
+    opt2.textContent = elLabel(r);
+    toSel.appendChild(opt2);
+  });
+
+  if (toSel.options.length > 1) toSel.selectedIndex = 1;
+
+  clearPathResult();
+  document.getElementById('pathModal').classList.remove('hidden');
+}
+
+function closePathModal() {
+  document.getElementById('pathModal').classList.add('hidden');
 }

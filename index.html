@@ -7,9 +7,10 @@
   <title>Building Layout Editor Pro</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap"
+    rel="stylesheet">
   <script src="https://unpkg.com/lucide@latest"></script>
-  <link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="style.css?v=2">
 </head>
 
 <body>
@@ -25,6 +26,11 @@
           <input type="checkbox" id="snapToggle">
           <span class="switch-label">Snap Grid</span>
         </label>
+        <div class="divider"></div>
+        <label class="switch-container">
+          <input type="checkbox" id="waypointToggle" checked onchange="window.toggleWaypointsVisibility && window.toggleWaypointsVisibility()">
+          <span class="switch-label">Show Waypoints</span>
+        </label>
       </div>
       <div class="toolbar-group">
         <label class="control-label">
@@ -36,23 +42,32 @@
         <label class="control-label dimensions-label">
           <span>Canvas Size</span>
           <div class="dimensions-input-group">
-            <input type="number" id="canvasW" value="3000" min="800" step="200" title="Canvas width (px)" oninput="resizeCanvas()">
+            <input type="number" id="canvasW" value="3000" min="800" step="200" title="Canvas width (px)"
+              oninput="resizeCanvas()">
             <span class="x-sep">×</span>
-            <input type="number" id="canvasH" value="2400" min="600" step="200" title="Canvas height (px)" oninput="resizeCanvas()">
+            <input type="number" id="canvasH" value="2400" min="600" step="200" title="Canvas height (px)"
+              oninput="resizeCanvas()">
           </div>
         </label>
         <div class="divider"></div>
         <button onclick="exportJSON()" title="Save Layout"><i data-lucide="save"></i><span>Save</span></button>
         <button onclick="importJSON()" title="Load Layout"><i data-lucide="folder-open"></i><span>Load</span></button>
-        <button class="merge-btn" onclick="mergeJSON()" title="Merge another layout into the current canvas"><i data-lucide="git-merge"></i><span>Merge Layout</span></button>
-        <button class="danger" onclick="confirmClearCanvas()" title="Remove all elements, floors, and walls and start fresh"><i data-lucide="trash-2"></i><span>Clear</span></button>
-        <button class="primary" onclick="exportPDF()" title="Export as PDF"><i data-lucide="file-down"></i><span>PDF</span></button>
-        <button class="success" onclick="openPathFinder()" title="Calculate routes"><i data-lucide="route"></i><span>Find Path</span></button>
+        <button class="merge-btn" onclick="mergeJSON()" title="Merge another layout into the current canvas"><i
+            data-lucide="git-merge"></i><span>Merge Layout</span></button>
+        <button class="danger" onclick="confirmClearCanvas()"
+          title="Remove all elements, floors, and walls and start fresh"><i
+            data-lucide="trash-2"></i><span>Clear</span></button>
+        <button class="primary" onclick="exportPDF()" title="Export as PDF"><i
+            data-lucide="file-down"></i><span>PDF</span></button>
+        <button class="success" onclick="openPathFinder()" title="Calculate routes"><i
+            data-lucide="route"></i><span>Find Path</span></button>
         <button id="viewModeBtn" onclick="toggle3DMode()" title="Toggle 2D / 3D View">
           <i data-lucide="box"></i><span>3D View</span>
         </button>
-        <button id="pathClearBtn" class="danger" style="display:none;" onclick="clearPathHighlights()"><i data-lucide="x"></i><span>Clear Path</span></button>
-        <button class="qr-btn" onclick="window.location.href='https://peppy-horse-1e80b7.netlify.app/'" title="QR Code Link"><i data-lucide="qr-code"></i><span>QR</span></button>
+        <button id="pathClearBtn" class="danger" style="display:none;" onclick="clearPathHighlights()"><i
+            data-lucide="x"></i><span>Clear Path</span></button>
+        <button class="qr-btn" onclick="window.location.href='https://peppy-horse-1e80b7.netlify.app/'"
+          title="QR Code Link"><i data-lucide="qr-code"></i><span>QR</span></button>
       </div>
     </div>
 
@@ -66,7 +81,8 @@
               <option value="Room">Standard Room</option>
               <option value="Classroom">Classroom</option>
               <option value="Office">Office</option>
-              <option value="Corridor" disabled style="font-weight:700;color:#555;background:#2d3748;">── Corridor Plans ──</option>
+              <option value="Corridor" disabled style="font-weight:700;color:#555;background:#2d3748;">── Corridor Plans
+                ──</option>
               <option value="Corridor-Square">▪ Square Plan</option>
               <option value="Corridor-Rect">▬ Rectangular Plan</option>
               <option value="Corridor-Circle">◯ Circular Plan</option>
@@ -92,23 +108,50 @@
               </label>
             </div>
             <div class="row">
-              <button style="flex:1" onclick="addEl('door',60,10,'#8B4513','Door')"><i data-lucide="door-closed"></i> Door</button>
-              <button style="flex:1" onclick="addEl('window',60,10,'#87CEEB','Window')"><i data-lucide="frame"></i> Window</button>
+              <button style="flex:1" onclick="addEl('door',60,10,'#8B4513','Door')"><i data-lucide="door-closed"></i>
+                Door</button>
+              <button style="flex:1" onclick="addEl('window',60,10,'#87CEEB','Window')"><i data-lucide="frame"></i>
+                Window</button>
             </div>
             <div class="row" style="margin-top:4px;">
-              <button style="flex:1" onclick="addEl('entry_exit',20,20,'#14b8a6','Entry/Exit')"><i data-lucide="map-pin"></i> Entry/Exit</button>
-              <button style="flex:1" onclick="addEl('waypoint',20,20,'#3b82f6','Waypoint')"><i data-lucide="map-pin"></i> Waypoint</button>
+              <button style="flex:1" onclick="addEl('entry_exit',20,20,'#14b8a6','Entry/Exit')"><i
+                  data-lucide="map-pin"></i> Entry/Exit</button>
+              <button style="flex:1" onclick="addEl('waypoint',20,20,'#3b82f6','Waypoint')"><i
+                  data-lucide="map-pin"></i> Waypoint</button>
             </div>
             <div class="row" style="margin-top:4px;">
-              <button style="flex:1" onclick="addEl('text',100,30,'transparent','Text Label')"><i data-lucide="type"></i> Text Label</button>
+              <button style="flex:1" onclick="addEl('text',100,30,'transparent','Text Label')"><i
+                  data-lucide="type"></i> Text Label</button>
             </div>
             <div class="row" style="margin-top:4px;">
-              <button id="wallToolBtn" style="flex:1;" onclick="toggleWallTool()"><i data-lucide="pen-tool"></i> Draw Wall</button>
+              <button style="flex:1" onclick="addEl('cooler',30,30,'#cbd5e1','Water Cooler')"
+                title="Add Water/Air Cooler"><i data-lucide="droplet"></i> Cooler</button>
+              <button style="flex:1" onclick="addEl('wash_area',40,30,'#f1f5f9','Wash Area')"
+                title="Add Wash Area / Sink"><i data-lucide="bath"></i> Wash Area</button>
+            </div>
+            <div class="row" style="margin-top:4px;">
+              <button style="flex:1" onclick="addEl('dustbin',25,25,'#64748b','Dustbin')"
+                title="Add Dustbin / Trash Can"><i data-lucide="trash-2"></i> Dustbin</button>
+              <button style="flex:1" onclick="addEl('plant',30,30,'#ea580c','Plant')" title="Add Potted Plant"><i
+                  data-lucide="sprout"></i> Plant</button>
+              <button style="flex:1" onclick="addEl('sofa',60,35,'#f59e0b','Sofa')" title="Add Sofa Seating"><i
+                  data-lucide="armchair"></i> Sofa</button>
+            </div>
+            <div class="row" style="margin-top:4px;">
+              <button style="flex:1" onclick="addEl('restroom_male',30,30,'#3b82f6','Boy Restroom Sign')"
+                title="Add Male Restroom Signage"><i data-lucide="user"></i> Boy Sign</button>
+              <button style="flex:1" onclick="addEl('restroom_female',30,30,'#f43f5e','Girl Restroom Sign')"
+                title="Add Female Restroom Signage"><i data-lucide="user"></i> Girl Sign</button>
+            </div>
+            <div class="row" style="margin-top:4px;">
+              <button id="wallToolBtn" style="flex:1;" onclick="toggleWallTool()"><i data-lucide="pen-tool"></i> Draw
+                Wall</button>
               <button style="flex:1" onclick="deleteSelectedWall()"><i data-lucide="eraser"></i> Del Wall</button>
             </div>
             <div id="wallHint" style="display:none;" class="hint-box">
               <i data-lucide="info" style="width:14px;height:14px;flex-shrink:0;"></i>
-              <span>Click &amp; drag on canvas to draw a wall. Press <b>Esc</b> or click <b>Draw Wall</b> to exit.</span>
+              <span>Click &amp; drag on canvas to draw a wall. Press <b>Esc</b> or click <b>Draw Wall</b> to
+                exit.</span>
             </div>
           </div>
 
@@ -129,10 +172,13 @@
               </div>
             </div>
             <div class="row" style="margin-top:8px;">
-              <div style="flex:1" class="control-row"><label>Stairs</label><input type="number" id="stairHallCount" min="1" max="12" value="4"></div>
-              <button style="flex:1" onclick="buildStairHall()"><i data-lucide="git-branch"></i> Build Stair Hall</button>
+              <div style="flex:1" class="control-row"><label>Stairs</label><input type="number" id="stairHallCount"
+                  min="1" max="12" value="4"></div>
+              <button style="flex:1" onclick="buildStairHall()"><i data-lucide="git-branch"></i> Build Stair
+                Hall</button>
             </div>
-            <button class="secondary-action-btn" onclick="openStairManager()"><i data-lucide="settings"></i> Manage Vertical Links</button>
+            <button class="secondary-action-btn" onclick="openStairManager()"><i data-lucide="settings"></i> Manage
+              Vertical Links</button>
           </div>
 
           <div class="panel">
@@ -142,7 +188,8 @@
                 Select any element and use "Link to Any Element" to create connections.
               </div>
             </div>
-            <button class="secondary-action-btn" onclick="openUniversalLinkManager()"><i data-lucide="settings"></i> Manage All Links</button>
+            <button class="secondary-action-btn" onclick="openUniversalLinkManager()"><i data-lucide="settings"></i>
+              Manage All Links</button>
           </div>
 
           <div class="panel properties-panel" id="propsPanel" style="display:none;">
@@ -160,6 +207,10 @@
               <div style="flex:1" class="control-row"><label>Y Position</label><input type="number" id="py"></div>
             </div>
             <div class="control-row">
+              <label>3D Height</label>
+              <input type="number" id="pheight3d" min="1" step="5" value="12">
+            </div>
+            <div class="control-row">
               <label>Rotation (°)</label>
               <div class="slider-group">
                 <input type="range" id="prot" min="0" max="360" step="15">
@@ -170,16 +221,36 @@
               <div style="display:flex; align-items:center; gap:8px;">
                 <input type="color" id="pcolor" class="color-picker-input">
                 <div class="color-presets" style="display:flex; flex-wrap:wrap; gap:4px; margin-top:2px;">
-                  <button type="button" class="color-preset-btn" style="background:#fca5a5; width:18px; height:18px; border-radius:50%; border:1px solid rgba(255,255,255,0.2); cursor:pointer;" onclick="setPresetColor('#fca5a5')" title="Light Red"></button>
-                  <button type="button" class="color-preset-btn" style="background:#fdbb2d; width:18px; height:18px; border-radius:50%; border:1px solid rgba(255,255,255,0.2); cursor:pointer;" onclick="setPresetColor('#fdbb2d')" title="Light Orange"></button>
-                  <button type="button" class="color-preset-btn" style="background:#fef08a; width:18px; height:18px; border-radius:50%; border:1px solid rgba(255,255,255,0.2); cursor:pointer;" onclick="setPresetColor('#fef08a')" title="Light Yellow"></button>
-                  <button type="button" class="color-preset-btn" style="background:#86efac; width:18px; height:18px; border-radius:50%; border:1px solid rgba(255,255,255,0.2); cursor:pointer;" onclick="setPresetColor('#86efac')" title="Light Green"></button>
-                  <button type="button" class="color-preset-btn" style="background:#93c5fd; width:18px; height:18px; border-radius:50%; border:1px solid rgba(255,255,255,0.2); cursor:pointer;" onclick="setPresetColor('#93c5fd')" title="Light Blue"></button>
-                  <button type="button" class="color-preset-btn" style="background:#c084fc; width:18px; height:18px; border-radius:50%; border:1px solid rgba(255,255,255,0.2); cursor:pointer;" onclick="setPresetColor('#c084fc')" title="Light Purple"></button>
-                  <button type="button" class="color-preset-btn" style="background:#fbcfe8; width:18px; height:18px; border-radius:50%; border:1px solid rgba(255,255,255,0.2); cursor:pointer;" onclick="setPresetColor('#fbcfe8')" title="Light Pink"></button>
-                  <button type="button" class="color-preset-btn" style="background:#99f6e4; width:18px; height:18px; border-radius:50%; border:1px solid rgba(255,255,255,0.2); cursor:pointer;" onclick="setPresetColor('#99f6e4')" title="Light Teal"></button>
-                  <button type="button" class="color-preset-btn" style="background:#ffffff; width:18px; height:18px; border-radius:50%; border:1px solid rgba(255,255,255,0.2); cursor:pointer;" onclick="setPresetColor('#ffffff')" title="White"></button>
-                  <button type="button" class="color-preset-btn" style="background:#e2e8f0; width:18px; height:18px; border-radius:50%; border:1px solid rgba(255,255,255,0.2); cursor:pointer;" onclick="setPresetColor('#e2e8f0')" title="Light Gray"></button>
+                  <button type="button" class="color-preset-btn"
+                    style="background:#fca5a5; width:18px; height:18px; border-radius:50%; border:1px solid rgba(255,255,255,0.2); cursor:pointer;"
+                    onclick="setPresetColor('#fca5a5')" title="Light Red"></button>
+                  <button type="button" class="color-preset-btn"
+                    style="background:#fdbb2d; width:18px; height:18px; border-radius:50%; border:1px solid rgba(255,255,255,0.2); cursor:pointer;"
+                    onclick="setPresetColor('#fdbb2d')" title="Light Orange"></button>
+                  <button type="button" class="color-preset-btn"
+                    style="background:#fef08a; width:18px; height:18px; border-radius:50%; border:1px solid rgba(255,255,255,0.2); cursor:pointer;"
+                    onclick="setPresetColor('#fef08a')" title="Light Yellow"></button>
+                  <button type="button" class="color-preset-btn"
+                    style="background:#86efac; width:18px; height:18px; border-radius:50%; border:1px solid rgba(255,255,255,0.2); cursor:pointer;"
+                    onclick="setPresetColor('#86efac')" title="Light Green"></button>
+                  <button type="button" class="color-preset-btn"
+                    style="background:#93c5fd; width:18px; height:18px; border-radius:50%; border:1px solid rgba(255,255,255,0.2); cursor:pointer;"
+                    onclick="setPresetColor('#93c5fd')" title="Light Blue"></button>
+                  <button type="button" class="color-preset-btn"
+                    style="background:#c084fc; width:18px; height:18px; border-radius:50%; border:1px solid rgba(255,255,255,0.2); cursor:pointer;"
+                    onclick="setPresetColor('#c084fc')" title="Light Purple"></button>
+                  <button type="button" class="color-preset-btn"
+                    style="background:#fbcfe8; width:18px; height:18px; border-radius:50%; border:1px solid rgba(255,255,255,0.2); cursor:pointer;"
+                    onclick="setPresetColor('#fbcfe8')" title="Light Pink"></button>
+                  <button type="button" class="color-preset-btn"
+                    style="background:#99f6e4; width:18px; height:18px; border-radius:50%; border:1px solid rgba(255,255,255,0.2); cursor:pointer;"
+                    onclick="setPresetColor('#99f6e4')" title="Light Teal"></button>
+                  <button type="button" class="color-preset-btn"
+                    style="background:#ffffff; width:18px; height:18px; border-radius:50%; border:1px solid rgba(255,255,255,0.2); cursor:pointer;"
+                    onclick="setPresetColor('#ffffff')" title="White"></button>
+                  <button type="button" class="color-preset-btn"
+                    style="background:#e2e8f0; width:18px; height:18px; border-radius:50%; border:1px solid rgba(255,255,255,0.2); cursor:pointer;"
+                    onclick="setPresetColor('#e2e8f0')" title="Light Gray"></button>
                 </div>
               </div>
             </div>
@@ -194,6 +265,20 @@
               <label>Elevation (Z)</label>
               <input type="number" id="pstairElevation" min="-200" max="500" step="5">
             </div>
+            <div class="row" id="stairExtraRow" style="display:none; gap:8px;">
+              <div style="flex:1" class="control-row">
+                <label>Step Count</label>
+                <input type="number" id="pstairStepCount" min="2" max="50" step="1" value="6">
+              </div>
+              <div style="flex:1" class="control-row">
+                <label>Step Alignment</label>
+                <select id="pstairOrientation">
+                  <option value="auto">Auto</option>
+                  <option value="horizontal">Horizontal</option>
+                  <option value="vertical">Vertical</option>
+                </select>
+              </div>
+            </div>
             <label class="checkbox-container">
               <input type="checkbox" id="pisStairs">
               <span class="checkbox-label">Staircase Pattern</span>
@@ -203,7 +288,8 @@
               <div class="stair-props">
                 <h4><i data-lucide="chevrons-up-down"></i> Vertical Connections</h4>
                 <div id="stairCurrentLinks"></div>
-                <button class="stair-link-btn" onclick="openLinkThisStair()"><i data-lucide="link"></i> Link Connector</button>
+                <button class="stair-link-btn" onclick="openLinkThisStair()"><i data-lucide="link"></i> Link
+                  Connector</button>
               </div>
             </div>
 
@@ -211,7 +297,8 @@
               <div class="universal-link-props">
                 <h4><i data-lucide="link-2"></i> Element Links</h4>
                 <div id="universalCurrentLinks"></div>
-                <button class="teal universal-link-btn" onclick="openUniversalLinkModal()"><i data-lucide="link"></i> Link to Element</button>
+                <button class="teal universal-link-btn" onclick="openUniversalLinkModal()"><i data-lucide="link"></i>
+                  Link to Element</button>
               </div>
             </div>
           </div>
@@ -228,7 +315,8 @@
             </div>
             <div class="row">
               <button style="flex:1" onclick="duplicateSelected()"><i data-lucide="copy-plus"></i> Duplicate</button>
-              <button class="danger" style="flex:1" onclick="deleteSelected()"><i data-lucide="trash-2"></i> Delete</button>
+              <button class="danger" style="flex:1" onclick="deleteSelected()"><i data-lucide="trash-2"></i>
+                Delete</button>
             </div>
           </div>
 
@@ -273,7 +361,8 @@
     <div class="modal">
       <h2>🪜 Link Vertical Connector</h2>
       <p style="font-size:13px;color:#666;margin-bottom:16px;">
-        Connect <strong id="slSourceName"></strong> on <strong id="slSourceFloor"></strong> to a staircase, elevator, or Stair Hall on any floor.
+        Connect <strong id="slSourceName"></strong> on <strong id="slSourceFloor"></strong> to a staircase, elevator, or
+        Stair Hall on any floor.
       </p>
       <div class="modal-section">
         <label>Target Floor</label>
@@ -340,8 +429,11 @@
       </div>
       <div class="modal-section">
         <label>Stops (Optional Waypoints)</label>
-        <div id="pfStopsContainer" style="display:flex; flex-direction:column; gap:8px; margin-top:6px; margin-bottom:8px;"></div>
-        <button class="secondary" onclick="addPathfinderStop()" style="font-size:11px; padding:4px 8px; width:auto; display:inline-flex; align-items:center; gap:4px; border:1px dashed var(--border-color); background:transparent;"><i data-lucide="plus" style="width:12px;height:12px;"></i> Add Stop</button>
+        <div id="pfStopsContainer"
+          style="display:flex; flex-direction:column; gap:8px; margin-top:6px; margin-bottom:8px;"></div>
+        <button class="secondary" onclick="addPathfinderStop()"
+          style="font-size:11px; padding:4px 8px; width:auto; display:inline-flex; align-items:center; gap:4px; border:1px dashed var(--border-color); background:transparent;"><i
+            data-lucide="plus" style="width:12px;height:12px;"></i> Add Stop</button>
       </div>
       <div class="modal-section">
         <label>To (End Room)</label>
@@ -362,12 +454,14 @@
     <div class="modal" style="width:380px;">
       <h2>🗑️ Clear Canvas</h2>
       <p style="margin:14px 0 8px;font-size:14px;color:#444;line-height:1.5;">
-        This will permanently remove <strong>all floors, rooms, elements, walls, and links</strong> and reset the canvas to a blank state.
+        This will permanently remove <strong>all floors, rooms, elements, walls, and links</strong> and reset the canvas
+        to a blank state.
       </p>
       <p style="font-size:13px;color:#d9534f;margin-bottom:16px;">⚠️ This action cannot be undone.</p>
       <div class="modal-footer" style="justify-content:space-between;">
         <button onclick="document.getElementById('clearCanvasModal').classList.add('hidden')">Cancel</button>
-        <button class="danger" onclick="clearCanvas()" style="background:#d9534f;color:#fff;">🗑️ Yes, Clear Everything</button>
+        <button class="danger" onclick="clearCanvas()" style="background:#d9534f;color:#fff;">🗑️ Yes, Clear
+          Everything</button>
       </div>
     </div>
   </div>
@@ -375,14 +469,14 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 
-  <script src="state.js"></script>
-  <script src="corridor.js"></script>
-  <script src="pathfinder.js"></script>
-  <script src="renderer.js"></script>
-  <script src="interactions.js"></script>
-  <script src="actions.js"></script>
-  <script src="io.js"></script>
-  <script src="main.js"></script>
+  <script src="state.js?v=2"></script>
+  <script src="corridor.js?v=2"></script>
+  <script src="pathfinder.js?v=2"></script>
+  <script src="renderer.js?v=2"></script>
+  <script src="interactions.js?v=2"></script>
+  <script src="actions.js?v=2"></script>
+  <script src="io.js?v=2"></script>
+  <script src="main.js?v=2"></script>
 </body>
 
 </html>

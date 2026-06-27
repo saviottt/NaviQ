@@ -9,6 +9,165 @@ function snap(val) {
 /* =================================================================
    DRAG & RESIZE (GPU optimized)
    ================================================================= */
+function getSnappedCoords(el, dx, dy, origR) {
+  const block = curBlock();
+  let targetNx = el.x + dx;
+  let targetNy = el.y + dy;
+  let isSnappedX = false;
+  let isSnappedY = false;
+  let guideX = null;
+  let guideY = null;
+  let snappedToWall = false;
+
+  const isDoorOrWindow = el.type === 'door' || el.type === 'window' || el.name === 'Door' || el.name === 'Window';
+  if (isDoorOrWindow) {
+    const floorWalls = state.walls.filter(w => w.floorId === state.currFloorId);
+    const doorCx = targetNx + el.w / 2;
+    const doorCy = targetNy + el.h / 2;
+    const snapThreshold = 50;
+
+    let closestWall = null;
+    let minDistance = Infinity;
+    let closestProjX = 0;
+    let closestProjY = 0;
+    let closestIsHoriz = true;
+
+    for (const wall of floorWalls) {
+      const isWallHoriz = wall.w >= wall.h;
+      let px, py;
+      if (isWallHoriz) {
+        const wallCy = wall.y + wall.h / 2;
+        px = Math.max(wall.x, Math.min(doorCx, wall.x + wall.w));
+        py = wallCy;
+      } else {
+        const wallCx = wall.x + wall.w / 2;
+        px = wallCx;
+        py = Math.max(wall.y, Math.min(doorCy, wall.y + wall.h));
+      }
+      const dist = Math.hypot(doorCx - px, doorCy - py);
+      if (dist < minDistance) {
+        minDistance = dist;
+        closestWall = wall;
+        closestProjX = px;
+        closestProjY = py;
+        closestIsHoriz = isWallHoriz;
+      }
+    }
+
+    if (closestWall && minDistance < snapThreshold) {
+      snappedToWall = true;
+      if (closestIsHoriz) {
+        targetNy = closestProjY - el.h / 2;
+        el.r = closestWall.r || 0;
+        isSnappedY = true;
+        guideY = closestProjY;
+
+        // Endpoint snapping
+        if (Math.abs(targetNx - closestWall.x) < 12) {
+          targetNx = closestWall.x;
+          isSnappedX = true;
+          guideX = closestWall.x;
+        } else if (Math.abs((targetNx + el.w) - (closestWall.x + closestWall.w)) < 12) {
+          targetNx = closestWall.x + closestWall.w - el.w;
+          isSnappedX = true;
+          guideX = closestWall.x + closestWall.w;
+        }
+      } else {
+        targetNx = closestProjX - el.w / 2;
+        el.r = (closestWall.r || 0) + 90;
+        isSnappedX = true;
+        guideX = closestProjX;
+
+        // Endpoint snapping
+        if (Math.abs(targetNy - closestWall.y) < 12) {
+          targetNy = closestWall.y;
+          isSnappedY = true;
+          guideY = closestWall.y;
+        } else if (Math.abs((targetNy + el.h) - (closestWall.y + closestWall.h)) < 12) {
+          targetNy = closestWall.y + closestWall.h - el.h;
+          isSnappedY = true;
+          guideY = closestWall.y + closestWall.h;
+        }
+      }
+    } else {
+      el.r = origR;
+    }
+  }
+
+  if (block && !snappedToWall) {
+    const otherEls = block.elements.filter(item => !state.selectedIds.includes(item.id));
+    const threshold = 8;
+
+    // X Snapping
+    for (const other of otherEls) {
+      const oL = other.x, oR = other.x + other.w, oC = other.x + other.w / 2;
+      const candidates = [oL, oR, oC];
+
+      for (const val of candidates) {
+        if (Math.abs(targetNx - val) < threshold) {
+          targetNx = val;
+          guideX = val;
+          isSnappedX = true;
+          break;
+        }
+        if (Math.abs((targetNx + el.w) - val) < threshold) {
+          targetNx = val - el.w;
+          guideX = val;
+          isSnappedX = true;
+          break;
+        }
+        if (Math.abs((targetNx + el.w / 2) - val) < threshold) {
+          targetNx = val - el.w / 2;
+          guideX = val;
+          isSnappedX = true;
+          break;
+        }
+      }
+      if (isSnappedX) break;
+    }
+
+    // Y Snapping
+    for (const other of otherEls) {
+      const oT = other.y, oB = other.y + other.h, oC = other.y + other.h / 2;
+      const candidates = [oT, oB, oC];
+
+      for (const val of candidates) {
+        if (Math.abs(targetNy - val) < threshold) {
+          targetNy = val;
+          guideY = val;
+          isSnappedY = true;
+          break;
+        }
+        if (Math.abs((targetNy + el.h) - val) < threshold) {
+          targetNy = val - el.h;
+          guideY = val;
+          isSnappedY = true;
+          break;
+        }
+        if (Math.abs((targetNy + el.h / 2) - val) < threshold) {
+          targetNy = val - el.h / 2;
+          guideY = val;
+          isSnappedY = true;
+          break;
+        }
+      }
+      if (isSnappedY) break;
+    }
+  }
+
+  // Grid Snap fallback
+  if (document.getElementById('snapToggle').checked) {
+    if (!isSnappedX) {
+      targetNx = Math.round(targetNx / state.gridSize) * state.gridSize;
+    }
+    if (!isSnappedY) {
+      targetNy = Math.round(targetNy / state.gridSize) * state.gridSize;
+    }
+  }
+
+  return { targetNx, targetNy, guideX, guideY };
+}
+
 function startDrag(e, el) {
   if (state.is3D) return;
   if (e.target.classList.contains('resize')) return;
@@ -41,6 +200,7 @@ function startDrag(e, el) {
 
   if (!state.selectedIds.includes(el.id)) return;
 
+  const origR = el.r || 0;
   const startX = e.clientX, startY = e.clientY;
   
   const selectedEls = getSelectedElements();
@@ -56,99 +216,12 @@ function startDrag(e, el) {
       const dx = (evt.clientX - startX) / state.zoom;
       const dy = (evt.clientY - startY) / state.zoom;
       
-      const block = curBlock();
       const canvasEl = getCanvas();
       
-      let snapDx = dx;
-      let snapDy = dy;
+      const { targetNx, targetNy, guideX, guideY } = getSnappedCoords(el, dx, dy, origR);
       
-      let guideX = null;
-      let guideY = null;
-      
-      if (block && initialEl) {
-        const otherEls = block.elements.filter(item => !state.selectedIds.includes(item.id));
-        const threshold = 8;
-        
-        let targetNx = initialEl.x + dx;
-        let targetNy = initialEl.y + dy;
-        
-        let isSnappedX = false;
-        let isSnappedY = false;
-
-        // X Snapping
-        for (const other of otherEls) {
-          const oL = other.x, oR = other.x + other.w, oC = other.x + other.w / 2;
-          const candidates = [oL, oR, oC];
-
-          for (const val of candidates) {
-            if (Math.abs(targetNx - val) < threshold) {
-              targetNx = val;
-              guideX = val;
-              isSnappedX = true;
-              break;
-            }
-            if (Math.abs((targetNx + el.w) - val) < threshold) {
-              targetNx = val - el.w;
-              guideX = val;
-              isSnappedX = true;
-              break;
-            }
-            if (Math.abs((targetNx + el.w / 2) - val) < threshold) {
-              targetNx = val - el.w / 2;
-              guideX = val;
-              isSnappedX = true;
-              break;
-            }
-          }
-          if (isSnappedX) break;
-        }
-
-        // Y Snapping
-        for (const other of otherEls) {
-          const oT = other.y, oB = other.y + other.h, oC = other.y + other.h / 2;
-          const candidates = [oT, oB, oC];
-
-          for (const val of candidates) {
-            if (Math.abs(targetNy - val) < threshold) {
-              targetNy = val;
-              guideY = val;
-              isSnappedY = true;
-              break;
-            }
-            if (Math.abs((targetNy + el.h) - val) < threshold) {
-              targetNy = val - el.h;
-              guideY = val;
-              isSnappedY = true;
-              break;
-            }
-            if (Math.abs((targetNy + el.h / 2) - val) < threshold) {
-              targetNy = val - el.h / 2;
-              guideY = val;
-              isSnappedY = true;
-              break;
-            }
-          }
-          if (isSnappedY) break;
-        }
-
-        // Grid Snap fallback
-        if (document.getElementById('snapToggle').checked) {
-          if (!isSnappedX) {
-            targetNx = Math.round(targetNx / state.gridSize) * state.gridSize;
-          }
-          if (!isSnappedY) {
-            targetNy = Math.round(targetNy / state.gridSize) * state.gridSize;
-          }
-        }
-        
-        snapDx = targetNx - initialEl.x;
-        snapDy = targetNy - initialEl.y;
-      } else {
-        if (document.getElementById('snapToggle').checked) {
-          snapDx = Math.round((initialEl.x + dx) / state.gridSize) * state.gridSize - initialEl.x;
-          snapDy = Math.round((initialEl.y + dy) / state.gridSize) * state.gridSize - initialEl.y;
-        }
-      }
+      const snapDx = targetNx - initialEl.x;
+      const snapDy = targetNy - initialEl.y;
 
       // Draw Guide Lines
       const oldGuides = document.querySelectorAll('.snap-guide-v, .snap-guide-h');
@@ -199,88 +272,9 @@ function startDrag(e, el) {
     const dx = (evt.clientX - startX) / state.zoom;
     const dy = (evt.clientY - startY) / state.zoom;
     
-    let snapDx = dx;
-    let snapDy = dy;
-    
-    const block = curBlock();
-    if (block && initialEl) {
-      const otherEls = block.elements.filter(item => !state.selectedIds.includes(item.id));
-      const threshold = 8;
-      
-      let targetNx = initialEl.x + dx;
-      let targetNy = initialEl.y + dy;
-      
-      let isSnappedX = false;
-      let isSnappedY = false;
-
-      // X Snapping
-      for (const other of otherEls) {
-        const oL = other.x, oR = other.x + other.w, oC = other.x + other.w / 2;
-        const candidates = [oL, oR, oC];
-
-        for (const val of candidates) {
-          if (Math.abs(targetNx - val) < threshold) {
-            targetNx = val;
-            isSnappedX = true;
-            break;
-          }
-          if (Math.abs((targetNx + el.w) - val) < threshold) {
-            targetNx = val - el.w;
-            isSnappedX = true;
-            break;
-          }
-          if (Math.abs((targetNx + el.w / 2) - val) < threshold) {
-            targetNx = val - el.w / 2;
-            isSnappedX = true;
-            break;
-          }
-        }
-        if (isSnappedX) break;
-      }
-
-      // Y Snapping
-      for (const other of otherEls) {
-        const oT = other.y, oB = other.y + other.h, oC = other.y + other.h / 2;
-        const candidates = [oT, oB, oC];
-
-        for (const val of candidates) {
-          if (Math.abs(targetNy - val) < threshold) {
-            targetNy = val;
-            isSnappedY = true;
-            break;
-          }
-          if (Math.abs((targetNy + el.h) - val) < threshold) {
-            targetNy = val - el.h;
-            isSnappedY = true;
-            break;
-          }
-          if (Math.abs((targetNy + el.h / 2) - val) < threshold) {
-            targetNy = val - el.h / 2;
-            isSnappedY = true;
-            break;
-          }
-        }
-        if (isSnappedY) break;
-      }
-
-      // Grid Snap fallback
-      if (document.getElementById('snapToggle').checked) {
-        if (!isSnappedX) {
-          targetNx = Math.round(targetNx / state.gridSize) * state.gridSize;
-        }
-        if (!isSnappedY) {
-          targetNy = Math.round(targetNy / state.gridSize) * state.gridSize;
-        }
-      }
-      
-      snapDx = targetNx - initialEl.x;
-      snapDy = targetNy - initialEl.y;
-    } else {
-      if (document.getElementById('snapToggle').checked) {
-        snapDx = Math.round((initialEl.x + dx) / state.gridSize) * state.gridSize - initialEl.x;
-        snapDy = Math.round((initialEl.y + dy) / state.gridSize) * state.gridSize - initialEl.y;
-      }
-    }
+    const { targetNx, targetNy } = getSnappedCoords(el, dx, dy, origR);
+    const snapDx = targetNx - initialEl.x;
+    const snapDy = targetNy - initialEl.y;
     
     let moved = false;
     initials.forEach(item => {
@@ -297,6 +291,7 @@ function startDrag(e, el) {
     if (moved) {
       pushHistory();
       autoExpandCanvas();
+      updatePropsPanel();
     }
   };
 
@@ -410,13 +405,18 @@ function startWallDrag(e, wall) {
     }
     wall.x = nx; wall.y = ny;
     const div = document.getElementById('wall-' + wall.id);
-    if (div) { div.style.left = nx + 'px'; div.style.top = ny + 'px'; }
+    if (div) {
+      div.style.left = nx + 'px';
+      div.style.top = ny + 'px';
+      div.style.transform = `rotate(${wall.r || 0}deg)`;
+    }
   };
 
   const onUp = () => {
     window.removeEventListener('mousemove', onMove);
     window.removeEventListener('mouseup', onUp);
     pushHistory();
+    updatePropsPanel();
   };
   window.addEventListener('mousemove', onMove);
   window.addEventListener('mouseup', onUp);
@@ -427,22 +427,138 @@ function startWallResize(e, wall, axis) {
   e.stopPropagation(); e.preventDefault();
   const startX = e.clientX, startY = e.clientY;
   const origW = wall.w, origH = wall.h;
+  const origX = wall.x;
 
   const onMove = ev => {
     if (axis === 'h') {
-      wall.w = Math.max(8, snap(origW + (ev.clientX - startX) / state.zoom));
+      const dx = (ev.clientX - startX) / state.zoom;
+      const rightEdge = origX + origW;
+      let newX = snap(origX + dx);
+      if (rightEdge - newX < 8) {
+        newX = rightEdge - 8;
+      }
+      wall.x = newX;
+      wall.w = rightEdge - newX;
     } else {
       wall.h = Math.max(8, snap(origH + (ev.clientY - startY) / state.zoom));
     }
     const div = document.getElementById('wall-' + wall.id);
-    if (div) { div.style.width = wall.w + 'px'; div.style.height = wall.h + 'px'; }
+    if (div) {
+      if (axis === 'h') {
+        div.style.left = wall.x + 'px';
+      }
+      div.style.width = wall.w + 'px';
+      div.style.height = wall.h + 'px';
+      div.style.transform = `rotate(${wall.r || 0}deg)`;
+    }
   };
 
   const onUp = () => {
     window.removeEventListener('mousemove', onMove);
     window.removeEventListener('mouseup', onUp);
     pushHistory();
+    updatePropsPanel();
   };
+  window.addEventListener('mousemove', onMove);
+  window.addEventListener('mouseup', onUp);
+}
+
+function startRotate(e, el) {
+  if (state.is3D) return;
+  e.stopPropagation(); e.preventDefault();
+  const div = document.getElementById('el-' + el.id);
+  if (!div) return;
+  
+  const rect = div.getBoundingClientRect();
+  const centerX = rect.left + rect.width / 2;
+  const centerY = rect.top + rect.height / 2;
+  
+  const startAngle = el.r || 0;
+  const startMouseAngle = Math.atan2(e.clientY - centerY, e.clientX - centerX) * (180 / Math.PI);
+  
+  const onMove = evt => {
+    const currentMouseAngle = Math.atan2(evt.clientY - centerY, evt.clientX - centerX) * (180 / Math.PI);
+    let diffAngle = currentMouseAngle - startMouseAngle;
+    let newAngle = (startAngle + diffAngle) % 360;
+    if (newAngle < 0) newAngle += 360;
+    
+    const snapEnabled = document.getElementById('snapToggle')?.checked || evt.shiftKey;
+    if (snapEnabled) {
+      newAngle = Math.round(newAngle / 15) * 15;
+    } else {
+      newAngle = Math.round(newAngle);
+    }
+    
+    el.r = newAngle;
+    
+    const elevation = el.isStairs || el.type === 'Staircase' ? (el.stairElevation || 0) : 0;
+    const transformStr = state.is3D
+      ? `rotate(${el.r}deg) translateZ(calc(var(--z-depth, 12px) + ${elevation}px))`
+      : `rotate(${el.r}deg)`;
+    div.style.transform = transformStr;
+    
+    const protInput = document.getElementById('prot');
+    if (protInput) protInput.value = el.r;
+    
+    const label = div.querySelector('.label');
+    if (label) {
+      label.style.setProperty('--el-rot', `${el.r}deg`);
+      label.dataset.rot = el.r;
+    }
+  };
+  
+  const onUp = () => {
+    window.removeEventListener('mousemove', onMove);
+    window.removeEventListener('mouseup', onUp);
+    pushHistory();
+    renderAll();
+  };
+  
+  window.addEventListener('mousemove', onMove);
+  window.addEventListener('mouseup', onUp);
+}
+
+function startWallRotate(e, wall) {
+  if (state.is3D) return;
+  e.stopPropagation(); e.preventDefault();
+  const div = document.getElementById('wall-' + wall.id);
+  if (!div) return;
+  
+  const rect = div.getBoundingClientRect();
+  const centerX = rect.left + rect.width / 2;
+  const centerY = rect.top + rect.height / 2;
+  
+  const startAngle = wall.r || 0;
+  const startMouseAngle = Math.atan2(e.clientY - centerY, e.clientX - centerX) * (180 / Math.PI);
+  
+  const onMove = evt => {
+    const currentMouseAngle = Math.atan2(evt.clientY - centerY, evt.clientX - centerX) * (180 / Math.PI);
+    let diffAngle = currentMouseAngle - startMouseAngle;
+    let newAngle = (startAngle + diffAngle) % 360;
+    if (newAngle < 0) newAngle += 360;
+    
+    const snapEnabled = document.getElementById('snapToggle')?.checked || evt.shiftKey;
+    if (snapEnabled) {
+      newAngle = Math.round(newAngle / 15) * 15;
+    } else {
+      newAngle = Math.round(newAngle);
+    }
+    
+    wall.r = newAngle;
+    
+    div.style.transform = `rotate(${wall.r}deg)`;
+    
+    const protInput = document.getElementById('prot');
+    if (protInput) protInput.value = wall.r;
+  };
+  
+  const onUp = () => {
+    window.removeEventListener('mousemove', onMove);
+    window.removeEventListener('mouseup', onUp);
+    pushHistory();
+    renderAll();
+  };
+  
   window.addEventListener('mousemove', onMove);
   window.addEventListener('mouseup', onUp);
 }
@@ -675,42 +791,79 @@ function deleteSelectedWall() {
     if (el) el.addEventListener(eventName, handler);
   };
 
-  listen('pname', 'input', function () {
+  const getSelectedOrWall = () => {
     const el = getSelected();
-    if (el) { el.name = this.value; renderCanvas(); }
+    if (el) return { type: 'element', data: el };
+    if (state.selectedWallId) {
+      const wall = state.walls.find(w => w.id === state.selectedWallId);
+      if (wall) return { type: 'wall', data: wall };
+    }
+    return null;
+  };
+
+  listen('pname', 'input', function () {
+    const sel = getSelectedOrWall();
+    if (sel) {
+      sel.data.name = this.value;
+      renderCanvas();
+    }
   });
 
   listen('pwidth', 'change', function () {
     pushHistory();
-    const el = getSelected();
-    if (el) { el.w = parseInt(this.value); renderCanvas(); }
+    const sel = getSelectedOrWall();
+    if (sel) {
+      sel.data.w = parseInt(this.value) || 0;
+      renderCanvas();
+    }
   });
 
   listen('pheight', 'change', function () {
     pushHistory();
-    const el = getSelected();
-    if (el) { el.h = parseInt(this.value); renderCanvas(); }
+    const sel = getSelectedOrWall();
+    if (sel) {
+      sel.data.h = parseInt(this.value) || 0;
+      renderCanvas();
+    }
   });
 
   listen('px', 'change', function () {
     pushHistory();
-    const el = getSelected();
-    if (el) { el.x = parseInt(this.value); renderCanvas(); }
+    const sel = getSelectedOrWall();
+    if (sel) {
+      sel.data.x = parseInt(this.value) || 0;
+      renderCanvas();
+    }
   });
 
   listen('py', 'change', function () {
     pushHistory();
-    const el = getSelected();
-    if (el) { el.y = parseInt(this.value); renderCanvas(); }
+    const sel = getSelectedOrWall();
+    if (sel) {
+      sel.data.y = parseInt(this.value) || 0;
+      renderCanvas();
+    }
   });
 
   listen('prot', 'input', function () {
-    const el = getSelected();
-    if (el) { el.r = parseInt(this.value); renderCanvas(); }
+    const sel = getSelectedOrWall();
+    if (sel) {
+      sel.data.r = parseInt(this.value) || 0;
+      renderCanvas();
+    }
   });
 
   listen('prot', 'change', function () {
     pushHistory();
+  });
+
+  listen('pheight3d', 'change', function () {
+    pushHistory();
+    const sel = getSelectedOrWall();
+    if (sel) {
+      sel.data.height3D = parseInt(this.value) || 0;
+      renderCanvas();
+    }
   });
 
   listen('pstairDir', 'change', function () {
@@ -725,10 +878,25 @@ function deleteSelectedWall() {
     if (el) { el.stairElevation = parseInt(this.value) || 0; renderCanvas(); }
   });
 
-  listen('pcolor', 'change', function () {
+  listen('pstairStepCount', 'change', function () {
     pushHistory();
     const el = getSelected();
-    if (el) { el.color = this.value; renderCanvas(); }
+    if (el) { el.stepCount = parseInt(this.value) || 6; renderCanvas(); }
+  });
+
+  listen('pstairOrientation', 'change', function () {
+    pushHistory();
+    const el = getSelected();
+    if (el) { el.stairOrientation = this.value; renderCanvas(); }
+  });
+
+  listen('pcolor', 'change', function () {
+    pushHistory();
+    const sel = getSelectedOrWall();
+    if (sel) {
+      sel.data.color = this.value;
+      renderCanvas();
+    }
   });
 
   listen('pisStairs', 'change', function () {

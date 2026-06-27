@@ -845,6 +845,10 @@ label {
   display: none !important;
 }
 
+#canvas.hide-waypoints .waypoint-element {
+  display: none !important;
+}
+
 /* Text Elements */
 .element.text-element {
   background-color: transparent !important;
@@ -1598,7 +1602,7 @@ label {
 .canvas-container.mode-3d .wall-element {
   --z-depth: 40px;
   transform: translateZ(var(--z-depth));
-  background: #3f4e62 !important;
+  background: #3f4e62;
   box-shadow: none;
 }
 
@@ -1790,4 +1794,219 @@ label {
 .canvas-container.mode-3d .exitpoint-shaped .faces {
   display: none !important;
 }
+
+/* Canva-style rotation handle */
+.rotate-handle {
+  position: absolute;
+  left: 50%;
+  top: -24px;
+  width: 16px;
+  height: 16px;
+  background: var(--accent-primary);
+  border: 2px solid #fff;
+  border-radius: 50%;
+  transform: translateX(-50%);
+  cursor: grab;
+  z-index: 101;
+  box-shadow: var(--shadow-sm);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: transform 0.1s ease;
+}
+
+.rotate-handle::before {
+  content: '';
+  position: absolute;
+  left: 50%;
+  top: 14px;
+  width: 2px;
+  height: 9px;
+  background: var(--accent-primary);
+  transform: translateX(-50%);
+  pointer-events: none;
+}
+
+/* A subtle rotate icon inside the handle */
+.rotate-handle::after {
+  content: '⟳';
+  font-size: 10px;
+  color: #fff;
+  font-weight: bold;
+  line-height: 1;
+  pointer-events: none;
+}
+
+.rotate-handle:hover {
+  background: var(--accent-hover);
+  transform: translateX(-50%) scale(1.15);
+}
+
+.rotate-handle:active {
+  cursor: grabbing;
+}
+
+/* Custom Element Graphics (Cooler, Wash Basin, etc.) */
+.element-graphic {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  z-index: 2;
+  box-sizing: border-box;
+}
+
+.canvas-container.mode-3d .element .element-graphic {
+  /* Prevent flickering on the top surface of the extruded box */
+  transform: translateZ(0.5px);
+}
+
+/* Fallback 3D heights/offsets for the new element classes */
+.canvas-container.mode-3d .cooler-element,
+.canvas-container.mode-3d .wash-area-element,
+.canvas-container.mode-3d .dustbin-element,
+.canvas-container.mode-3d .sofa-element,
+.canvas-container.mode-3d .plant-element,
+.canvas-container.mode-3d .restroom-marker-element,
+.canvas-container.mode-3d .restroom-male-element,
+.canvas-container.mode-3d .restroom-female-element {
+  --z-depth: 0px !important;
+}
+
+/* Hide parent container box (background, border, faces) for custom semantic 3D elements in 3D mode */
+.canvas-container.mode-3d .cooler-element,
+.canvas-container.mode-3d .wash-area-element,
+.canvas-container.mode-3d .dustbin-element,
+.canvas-container.mode-3d .sofa-element,
+.canvas-container.mode-3d .plant-element,
+.canvas-container.mode-3d .restroom-marker-element,
+.canvas-container.mode-3d .restroom-male-element,
+.canvas-container.mode-3d .restroom-female-element {
+  background-color: transparent !important;
+  border-color: transparent !important;
+  box-shadow: none !important;
+}
+
+.canvas-container.mode-3d .cooler-element::before,
+.canvas-container.mode-3d .cooler-element::after,
+.canvas-container.mode-3d .cooler-element > .faces,
+.canvas-container.mode-3d .wash-area-element::before,
+.canvas-container.mode-3d .wash-area-element::after,
+.canvas-container.mode-3d .wash-area-element > .faces,
+.canvas-container.mode-3d .dustbin-element::before,
+.canvas-container.mode-3d .dustbin-element::after,
+.canvas-container.mode-3d .dustbin-element > .faces,
+.canvas-container.mode-3d .sofa-element::before,
+.canvas-container.mode-3d .sofa-element::after,
+.canvas-container.mode-3d .sofa-element > .faces,
+.canvas-container.mode-3d .plant-element::before,
+.canvas-container.mode-3d .plant-element::after,
+.canvas-container.mode-3d .plant-element > .faces,
+.canvas-container.mode-3d .restroom-marker-element::before,
+.canvas-container.mode-3d .restroom-marker-element::after,
+.canvas-container.mode-3d .restroom-marker-element > .faces,
+.canvas-container.mode-3d .restroom-male-element::before,
+.canvas-container.mode-3d .restroom-male-element::after,
+.canvas-container.mode-3d .restroom-male-element > .faces,
+.canvas-container.mode-3d .restroom-female-element::before,
+.canvas-container.mode-3d .restroom-female-element::after,
+.canvas-container.mode-3d .restroom-female-element > .faces {
+  display: none !important;
+}
+
+/* Hide 2D flat SVG graphics inside custom elements in 3D mode */
+.canvas-container.mode-3d .cooler-element > .element-graphic,
+.canvas-container.mode-3d .wash-area-element > .element-graphic,
+.canvas-container.mode-3d .dustbin-element > .element-graphic,
+.canvas-container.mode-3d .sofa-element > .element-graphic,
+.canvas-container.mode-3d .plant-element > .element-graphic,
+.canvas-container.mode-3d .restroom-marker-element > .element-graphic,
+.canvas-container.mode-3d .restroom-male-element > .element-graphic,
+.canvas-container.mode-3d .restroom-female-element > .element-graphic {
+  display: none !important;
+}
+
+/* Custom 3D Box Helper Styles */
+.custom-3d-box {
+  position: absolute;
+  transform-style: preserve-3d;
+  background-color: var(--box-color, #cbd5e1);
+  box-sizing: border-box;
+}
+
+/* Front Face */
+.custom-3d-box::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  bottom: calc(-1 * var(--box-h, 10px));
+  width: 100%;
+  height: var(--box-h, 10px);
+  transform: rotateX(-90deg);
+  transform-origin: top;
+  background-color: inherit;
+  filter: brightness(0.75);
+}
+
+/* Left Face */
+.custom-3d-box::before {
+  content: '';
+  position: absolute;
+  left: calc(-1 * var(--box-h, 10px));
+  top: 0;
+  width: var(--box-h, 10px);
+  height: 100%;
+  transform: rotateY(-90deg);
+  transform-origin: right;
+  background-color: inherit;
+  filter: brightness(0.6);
+}
+
+/* Faces Container (Right and Back) */
+.custom-3d-box-faces {
+  position: absolute;
+  top: 0; left: 0; right: 0; bottom: 0;
+  pointer-events: none;
+  transform-style: preserve-3d;
+  background: inherit;
+}
+
+/* Right Face */
+.custom-3d-box-faces::before {
+  content: '';
+  position: absolute;
+  right: calc(-1 * var(--box-h, 10px));
+  top: 0;
+  width: var(--box-h, 10px);
+  height: 100%;
+  transform: rotateY(90deg);
+  transform-origin: left;
+  background-color: inherit;
+  filter: brightness(0.9);
+}
+
+/* Back Face */
+.custom-3d-box-faces::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: calc(-1 * var(--box-h, 10px));
+  width: 100%;
+  height: var(--box-h, 10px);
+  transform: rotateX(90deg);
+  transform-origin: bottom;
+  background-color: inherit;
+  filter: brightness(0.5);
+}
+
+/* Hide 3D helper boxes and leaf panels when NOT in 3D Mode */
+.canvas-container:not(.mode-3d) .custom-3d-box,
+.canvas-container:not(.mode-3d) .plant-leaf-panel {
+  display: none !important;
+}
+
+
+
 

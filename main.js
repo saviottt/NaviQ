@@ -82,9 +82,22 @@ window.resizeCanvas = function () {
   }
 };
 
+window.toggleWaypointsVisibility = function () {
+  const show = document.getElementById('waypointToggle')?.checked !== false;
+  const canvas = document.getElementById('canvas');
+  if (canvas) {
+    if (show) {
+      canvas.classList.remove('hide-waypoints');
+    } else {
+      canvas.classList.add('hide-waypoints');
+    }
+  }
+};
+
 /* =================================================================
    BOOTSTRAP INITIALIZATION
    ================================================================= */
 loadSavedState();
 applyCanvasTransform();
 renderAll();
+window.toggleWaypointsVisibility();
