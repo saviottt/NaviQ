@@ -245,6 +245,8 @@ function addRoom() {
     Restroom: [100, 80, '#e8f5e9'],
     Hall: [250, 180, '#fff9e6'],
     Elevator: [80, 80, '#d5e8f5'],
+    WaterCooler: [60, 60, '#2196F3'],
+    Bridge: [200, 60, '#f59e0b'],
   };
   const [w, h, color] = map[type] || [150, 100, '#fff'];
   addEl(type, w, h, color, type);
@@ -342,6 +344,7 @@ function deleteSelected() {
   
   state.stairLinks = state.stairLinks.filter(lk => !toDelete.includes(lk.fromElId) && !toDelete.includes(lk.toElId));
   state.universalLinks = state.universalLinks.filter(lk => !toDelete.includes(lk.fromElId) && !toDelete.includes(lk.toElId));
+  state.bridgeLinks = (state.bridgeLinks || []).filter(lk => !toDelete.includes(lk.fromElId) && !toDelete.includes(lk.toElId));
 
   for (let b of (curFloor()?.blocks || [])) {
     b.elements = b.elements.filter(e => !toDelete.includes(e.id));
@@ -744,5 +747,173 @@ function setPresetColor(color) {
   } else {
     showToast('Select an element first');
   }
+}
+
+/* =================================================================
+   BRIDGE LINKING ACTIONS
+   ================================================================= */
+let _pendingBridgeSource = null;
+
+function openLinkThisBridge() {
+  const el = getSelected();
+  if (!el) return;
+  if (el.type !== 'Bridge') { showToast('Select a Bridge element first'); return; }
+
+  const srcRec = getElById(el.id);
+  const srcFloor = state.floors.find(f => f.id === state.currFloorId);
+  const srcBldg = state.buildings.find(b => b.id === state.currBuildingId);
+
+  _pendingBridgeSource = {
+    elId: el.id,
+    floorId: state.currFloorId,
+    buildingId: state.currBuildingId
+  };
+
+  document.getElementById('blSourceName').textContent = el.name;
+  document.getElementById('blSourceBuilding').textContent = srcBldg ? srcBldg.name : '?';
+
+  // Populate target buildings (all except source building)
+  const blBldgSel = document.getElementById('blTargetBuilding');
+  blBldgSel.innerHTML = '';
+  state.buildings.filter(b => b.id !== state.currBuildingId).forEach(b => {
+    const opt = document.createElement('option');
+    opt.value = b.id;
+    opt.textContent = b.name;
+    blBldgSel.appendChild(opt);
+  });
+
+  if (!blBldgSel.options.length) {
+    alert('You need at least 2 buildings to create a bridge link. Use the Structure panel to add a second building.');
+    return;
+  }
+
+  populateBridgeTargets();
+  document.getElementById('bridgeLinkModal').classList.remove('hidden');
+}
+
+function populateBridgeTargets() {
+  const bldgId = parseInt(document.getElementById('blTargetBuilding').value);
+  const bldgFloors = state.floors.filter(f => f.buildingId === bldgId);
+
+  const floorSel = document.getElementById('blTargetFloor');
+  floorSel.innerHTML = '';
+  bldgFloors.forEach(f => {
+    const opt = document.createElement('option');
+    opt.value = f.id;
+    opt.textContent = f.name;
+    floorSel.appendChild(opt);
+  });
+
+  populateBridgeTargetsEl();
+}
+
+function populateBridgeTargetsEl() {
+  const floorId = parseInt(document.getElementById('blTargetFloor').value);
+  const bldgId  = parseInt(document.getElementById('blTargetBuilding').value);
+  const floor   = state.floors.find(f => f.id === floorId);
+  const elSel   = document.getElementById('blTargetElement');
+  elSel.innerHTML = '';
+
+  if (!floor) return;
+
+  const bridges = [];
+  floor.blocks.forEach(b => {
+    b.elements.forEach(el => {
+      if (el.type === 'Bridge' && el.id !== (_pendingBridgeSource?.elId)) {
+        bridges.push({ el, blockId: b.id, floorId, buildingId: bldgId });
+      }
+    });
+  });
+
+  if (bridges.length === 0) {
+    const opt = document.createElement('option');
+    opt.value = '';
+    opt.textContent = '— No Bridge elements on this floor —';
+    elSel.appendChild(opt);
+  } else {
+    bridges.forEach(s => {
+      const opt = document.createElement('option');
+      opt.value = s.el.id;
+      opt.textContent = s.el.name;
+      elSel.appendChild(opt);
+    });
+  }
+}
+
+function confirmBridgeLink() {
+  const toElId      = parseInt(document.getElementById('blTargetElement').value);
+  const toFloorId   = parseInt(document.getElementById('blTargetFloor').value);
+  const toBuildingId = parseInt(document.getElementById('blTargetBuilding').value);
+
+  if (!toElId) { alert('No Bridge element available on that floor.'); return; }
+
+  const exists = (state.bridgeLinks || []).some(lk =>
+    (lk.fromElId === _pendingBridgeSource.elId && lk.toElId === toElId) ||
+    (lk.fromElId === toElId && lk.toElId === _pendingBridgeSource.elId)
+  );
+  if (exists) { showToast('Bridge link already exists!'); closeBridgeLinkModal(); return; }
+
+  pushHistory();
+  state.bridgeLinks = state.bridgeLinks || [];
+  state.bridgeLinks.push({
+    id: Date.now(),
+    fromElId:      _pendingBridgeSource.elId,
+    fromFloorId:   _pendingBridgeSource.floorId,
+    fromBuildingId: _pendingBridgeSource.buildingId,
+    toElId,
+    toFloorId,
+    toBuildingId
+  });
+
+  closeBridgeLinkModal();
+  renderAll();
+  showToast('Buildings bridged! 🌉');
+}
+
+function closeBridgeLinkModal() {
+  document.getElementById('bridgeLinkModal').classList.add('hidden');
+}
+
+function removeBridgeLinkById(linkId) {
+  pushHistory();
+  state.bridgeLinks = (state.bridgeLinks || []).filter(lk => lk.id !== linkId);
+  renderAll();
+  showToast('Bridge link removed');
+}
+
+function removeBridgeLinkByIndex(i) {
+  pushHistory();
+  (state.bridgeLinks || []).splice(i, 1);
+  renderAll();
+  showToast('Bridge link removed');
+}
+
+function openBridgeLinkManager() {
+  const content = document.getElementById('bridgeLinkManagerContent');
+  if (!content) return;
+  const links = state.bridgeLinks || [];
+  if (links.length === 0) {
+    content.innerHTML = '<div class="path-empty">No bridge connections have been created yet.</div>';
+  } else {
+    content.innerHTML = '';
+    links.forEach((lk, i) => {
+      const fromEl   = getElById(lk.fromElId);
+      const toEl     = getElById(lk.toElId);
+      const fromBldg = state.buildings.find(b => b.id === lk.fromBuildingId);
+      const toBldg   = state.buildings.find(b => b.id === lk.toBuildingId);
+      const row = document.createElement('div');
+      row.className = 'stair-link-row';
+      row.innerHTML = `<span class="link-icon" style="font-size:18px;">🌉</span>
+        <span style="flex:1;font-size:13px;">
+          <b>${fromEl ? fromEl.el.name : '?'}</b> (${fromBldg ? fromBldg.name : '?'})
+          &nbsp;↔&nbsp;
+          <b>${toEl ? toEl.el.name : '?'}</b> (${toBldg ? toBldg.name : '?'})
+        </span>
+        <button class="danger" onclick="removeBridgeLinkByIndex(${i});openBridgeLinkManager();"><i data-lucide="trash-2"></i> Remove</button>`;
+      content.appendChild(row);
+    });
+  }
+  document.getElementById('bridgeLinkManagerModal').classList.remove('hidden');
+  if (window.lucide) window.lucide.createIcons();
 }
 

@@ -1848,4 +1848,191 @@ label {
   cursor: grabbing;
 }
 
+/* =================================================================
+   WATER COOLER ELEMENT
+   ================================================================= */
+/* Water drop SVG encoded for background — appears on all 6 cube faces in 3D */
+.element.water-cooler-element {
+  background-color: #1e88e5 !important;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 24 24' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M12 2C12 2 5 9.5 5 14a7 7 0 0 0 14 0C19 9.5 12 2 12 2Z' fill='rgba(255,255,255,0.25)' stroke='rgba(255,255,255,0.35)' stroke-width='0.8'/%3E%3Cpath d='M9 15a3 3 0 0 0 3 3' stroke='rgba(255,255,255,0.5)' stroke-width='1' fill='none' stroke-linecap='round'/%3E%3C/svg%3E") !important;
+  background-repeat: no-repeat !important;
+  background-position: center center !important;
+  background-size: 55% 55% !important;
+  border: 2px solid rgba(255, 255, 255, 0.4) !important;
+  border-radius: 4px !important;
+  box-shadow: 0 0 12px rgba(30, 136, 229, 0.5), 0 2px 8px rgba(0,0,0,0.3) !important;
+}
+
+.element.water-cooler-element:hover {
+  box-shadow: 0 0 20px rgba(30, 136, 229, 0.7), 0 4px 12px rgba(0,0,0,0.35) !important;
+  border-color: rgba(255, 255, 255, 0.65) !important;
+}
+
+.element.water-cooler-element.selected {
+  outline: 2px solid #64b5f6 !important;
+  box-shadow: 0 0 24px rgba(100, 181, 246, 0.8), 0 0 15px rgba(30, 136, 229, 0.6) !important;
+}
+
+/* Water drop icon overlay — visible in 2D and on top face in 3D */
+.water-drop-icon {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 60%;
+  height: 60%;
+  pointer-events: none;
+  z-index: 5;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  filter: drop-shadow(0 2px 4px rgba(0,0,0,0.3));
+}
+
+.water-drop-icon svg {
+  width: 100%;
+  height: 100%;
+}
+
+/* In 3D mode, push the icon to float on the top face */
+.canvas-container.mode-3d .water-drop-icon {
+  transform: translate(-50%, -50%) translateZ(2px);
+}
+
+/* 3D Water Cooler — proper tall block with water drop on ALL 6 faces */
+.canvas-container.mode-3d .water-cooler-element {
+  --z-depth: 60px;
+  transform: translateZ(var(--z-depth));
+  /* The background-image (water drop SVG) will be inherited by ::after, ::before,
+     .faces::after, .faces::before so all 4 side faces + bottom show the symbol */
+  background-color: #1e88e5 !important;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 24 24' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M12 2C12 2 5 9.5 5 14a7 7 0 0 0 14 0C19 9.5 12 2 12 2Z' fill='rgba(255,255,255,0.25)' stroke='rgba(255,255,255,0.35)' stroke-width='0.8'/%3E%3Cpath d='M9 15a3 3 0 0 0 3 3' stroke='rgba(255,255,255,0.5)' stroke-width='1' fill='none' stroke-linecap='round'/%3E%3C/svg%3E") !important;
+  background-repeat: no-repeat !important;
+  background-position: center center !important;
+  background-size: 55% 55% !important;
+}
+
+/* Side faces — override inherited background-size to fit the rotated face dimensions */
+.canvas-container.mode-3d .water-cooler-element::after,
+.canvas-container.mode-3d .water-cooler-element::before,
+.canvas-container.mode-3d .water-cooler-element .faces::after,
+.canvas-container.mode-3d .water-cooler-element .faces::before {
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 24 24' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M12 2C12 2 5 9.5 5 14a7 7 0 0 0 14 0C19 9.5 12 2 12 2Z' fill='rgba(255,255,255,0.22)' stroke='rgba(255,255,255,0.3)' stroke-width='0.8'/%3E%3Cpath d='M9 15a3 3 0 0 0 3 3' stroke='rgba(255,255,255,0.4)' stroke-width='1' fill='none' stroke-linecap='round'/%3E%3C/svg%3E") !important;
+  background-repeat: no-repeat !important;
+  background-position: center center !important;
+  background-size: 70% 70% !important;
+}
+
+/* Glow pulse animation for the water cooler in 2D */
+@keyframes water-glow-pulse {
+  0%, 100% { box-shadow: 0 0 10px rgba(30, 136, 229, 0.4), 0 2px 6px rgba(0,0,0,0.25); }
+  50%       { box-shadow: 0 0 22px rgba(30, 136, 229, 0.75), 0 4px 12px rgba(0,0,0,0.3); }
+}
+
+.element.water-cooler-element:not(.selected) {
+  animation: water-glow-pulse 2.5s ease-in-out infinite;
+}
+
+/* =================================================================
+   BRIDGE ELEMENT
+   ================================================================= */
+.element.bridge-element {
+  background-color: #f59e0b !important;
+  background-image:
+    repeating-linear-gradient(
+      90deg,
+      transparent,
+      transparent 18px,
+      rgba(255,255,255,0.18) 18px,
+      rgba(255,255,255,0.18) 20px
+    ) !important;
+  border: 2px solid rgba(255,255,255,0.45) !important;
+  border-radius: 3px !important;
+  box-shadow: 0 0 14px rgba(245, 158, 11, 0.45), 0 2px 8px rgba(0,0,0,0.3) !important;
+}
+
+.element.bridge-element:hover {
+  box-shadow: 0 0 22px rgba(245, 158, 11, 0.7), 0 4px 12px rgba(0,0,0,0.35) !important;
+  border-color: rgba(255, 255, 255, 0.7) !important;
+}
+
+.element.bridge-element.selected {
+  outline: 2px solid #fcd34d !important;
+  box-shadow: 0 0 24px rgba(252, 211, 77, 0.8), 0 0 15px rgba(245, 158, 11, 0.6) !important;
+}
+
+/* Bridge-linked border */
+.element.bridge-linked {
+  border: 2px dashed #fb923c !important;
+}
+
+/* Bridge badge (shows connected building names) */
+.bridge-badge {
+  position: absolute;
+  top: -10px;
+  left: -6px;
+  background: #fb923c;
+  color: #fff;
+  font-size: 9px;
+  padding: 1px 6px;
+  border-radius: 10px;
+  pointer-events: none;
+  white-space: nowrap;
+  z-index: 200;
+  font-weight: 700;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+}
+
+/* Bridge link chip (in Properties panel) */
+.bridge-link-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: rgba(251, 146, 60, 0.08);
+  border: 1px solid rgba(251, 146, 60, 0.3);
+  border-radius: 20px;
+  padding: 4px 10px;
+  font-size: 11px;
+  color: var(--text-primary);
+  margin: 2px;
+  font-weight: 500;
+}
+
+.bridge-link-chip .remove-link {
+  cursor: pointer;
+  color: var(--accent-danger);
+  font-weight: 700;
+  margin-left: 2px;
+}
+
+.bridge-link-chip .remove-link:hover {
+  color: #ff3366;
+}
+
+/* 3D Bridge — very flat slab */
+.canvas-container.mode-3d .bridge-element {
+  --z-depth: 8px;
+  transform: translateZ(var(--z-depth));
+  background-color: #f59e0b !important;
+  background-image:
+    repeating-linear-gradient(
+      90deg,
+      transparent,
+      transparent 18px,
+      rgba(255,255,255,0.18) 18px,
+      rgba(255,255,255,0.18) 20px
+    ) !important;
+}
+
+/* Bridge glow pulse animation */
+@keyframes bridge-glow-pulse {
+  0%, 100% { box-shadow: 0 0 10px rgba(245, 158, 11, 0.35), 0 2px 6px rgba(0,0,0,0.25); }
+  50%       { box-shadow: 0 0 22px rgba(245, 158, 11, 0.65), 0 4px 12px rgba(0,0,0,0.3); }
+}
+
+.element.bridge-element:not(.selected) {
+  animation: bridge-glow-pulse 3s ease-in-out infinite;
+}
+
+
 

@@ -10,6 +10,7 @@ let state = {
   }],
   stairLinks: [],
   universalLinks: [],
+  bridgeLinks: [],
   walls: [],
   currFloorId: 1,
   currBlockId: 101,
@@ -98,6 +99,12 @@ function isVerticalConnector(el) {
   return isStairOrElevator(el) || isVerticalJunction(el);
 }
 
+function isBridgeConnector(el) {
+  const type = (el.type || '').toLowerCase();
+  const name = (el.name || '').toLowerCase();
+  return type === 'bridge' || name.includes('bridge');
+}
+
 function elLabel(rec) {
   return `${rec.el.name} (${rec.floorName} › ${rec.blockName})`;
 }
@@ -110,6 +117,7 @@ function saveState() {
       floors: state.floors,
       stairLinks: state.stairLinks,
       universalLinks: state.universalLinks,
+      bridgeLinks: state.bridgeLinks,
       walls: state.walls
     }));
     showToast('Saved');
@@ -135,6 +143,7 @@ function loadSavedState() {
       if (!parsed.buildings) state.floors.forEach(f => f.buildingId = 1);
       state.stairLinks = parsed.stairLinks || [];
       state.universalLinks = parsed.universalLinks || [];
+      state.bridgeLinks = parsed.bridgeLinks || [];
       state.walls = parsed.walls || [];
       state.currFloorId = state.floors[0].id;
       state.currBlockId = state.floors[0].blocks[0].id;
@@ -159,6 +168,7 @@ function pushHistory() {
     floors: state.floors,
     stairLinks: state.stairLinks,
     universalLinks: state.universalLinks,
+    bridgeLinks: state.bridgeLinks,
     walls: state.walls
   }));
   if (undoStack.length > 30) undoStack.shift();
@@ -174,6 +184,7 @@ function undo() {
     floors: state.floors,
     stairLinks: state.stairLinks,
     universalLinks: state.universalLinks,
+    bridgeLinks: state.bridgeLinks,
     walls: state.walls
   }));
   const s = JSON.parse(undoStack.pop());
@@ -182,6 +193,7 @@ function undo() {
   state.floors = s.floors;
   state.stairLinks = s.stairLinks || [];
   state.universalLinks = s.universalLinks || [];
+  state.bridgeLinks = s.bridgeLinks || [];
   state.walls = s.walls || [];
   renderAll();
 }
@@ -194,6 +206,7 @@ function redo() {
     floors: state.floors,
     stairLinks: state.stairLinks,
     universalLinks: state.universalLinks,
+    bridgeLinks: state.bridgeLinks,
     walls: state.walls
   }));
   const s = JSON.parse(redoStack.pop());
@@ -202,6 +215,7 @@ function redo() {
   state.floors = s.floors;
   state.stairLinks = s.stairLinks || [];
   state.universalLinks = s.universalLinks || [];
+  state.bridgeLinks = s.bridgeLinks || [];
   state.walls = s.walls || [];
   renderAll();
 }
@@ -218,6 +232,7 @@ function clearCanvas() {
   state.floors = [{ id: 1, buildingId: 1, name: 'Ground Floor', blocks: [{ id: 101, name: 'Block A', elements: [] }] }];
   state.stairLinks = [];
   state.universalLinks = [];
+  state.bridgeLinks = [];
   state.walls = [];
   state.currFloorId = 1;
   state.currBlockId = 101;

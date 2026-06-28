@@ -8,6 +8,7 @@ function exportJSON() {
     floors: state.floors,
     stairLinks: state.stairLinks,
     universalLinks: state.universalLinks,
+    bridgeLinks: state.bridgeLinks,
     walls: state.walls
   }, null, 2));
   const a = document.createElement('a');
@@ -44,12 +45,14 @@ function handleJSONImport(event) {
         if (!parsed.buildings) state.floors.forEach(f => f.buildingId = 1);
         state.stairLinks = parsed.stairLinks || [];
         state.universalLinks = parsed.universalLinks || [];
+        state.bridgeLinks = parsed.bridgeLinks || [];
         state.walls = parsed.walls || [];
       } else if (Array.isArray(parsed)) {
         state.floors = parsed;
         state.floors.forEach(f => f.buildingId = 1);
         state.stairLinks = [];
         state.universalLinks = [];
+        state.bridgeLinks = [];
         state.walls = [];
       } else throw new Error('Invalid format');
       state.currFloorId = state.floors[0]?.id ?? null;
@@ -98,6 +101,7 @@ function handleJSONMerge(event) {
       }
       const srcStairLinks     = parsed.stairLinks     || [];
       const srcUniversalLinks = parsed.universalLinks || [];
+      const srcBridgeLinks    = parsed.bridgeLinks    || [];
       const srcWalls          = parsed.walls          || [];
 
       // ------------------------------------------------------------------
@@ -158,6 +162,15 @@ function handleJSONMerge(event) {
         toElId:      remapRef(link.toElId)
       }));
 
+      const remappedBridgeLinks = srcBridgeLinks.map(link => ({
+        ...link,
+        id: remapRef(link.id),
+        fromFloorId: remapRef(link.fromFloorId),
+        fromElId:    remapRef(link.fromElId),
+        toFloorId:   remapRef(link.toFloorId),
+        toElId:      remapRef(link.toElId)
+      }));
+
       // Walls only carry positional data — just remap their floorId
       const remappedWalls = srcWalls.map(w => ({
         ...w,
@@ -172,6 +185,7 @@ function handleJSONMerge(event) {
       state.floors.push(...remappedFloors);
       state.stairLinks.push(...remappedStairLinks);
       state.universalLinks.push(...remappedUniversalLinks);
+      state.bridgeLinks.push(...remappedBridgeLinks);
       state.walls.push(...remappedWalls);
 
       // Jump view to the first merged building/floor so the user sees it

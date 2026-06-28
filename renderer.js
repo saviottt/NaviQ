@@ -8,6 +8,7 @@ function renderAll() {
   updatePropsPanel();
   renderStairLinksPanel();
   renderUniversalLinksPanel();
+  renderBridgeLinksPanel();
   if (window.lucide) {
     window.lucide.createIcons();
   }
@@ -222,12 +223,17 @@ function renderCanvas() {
         if (el.type === 'entry_exit' || el.name === 'Entry/Exit') div.classList.add('entry-exit-element');
         if (el.type === 'waypoint' || el.name === 'Waypoint') div.classList.add('waypoint-element');
         if (el.type === 'text' || el.name === 'Text Label') div.classList.add('text-element');
+        if (el.type === 'WaterCooler') div.classList.add('water-cooler-element');
+        if (el.type === 'Bridge') div.classList.add('bridge-element');
 
         const hasLinks = state.stairLinks.some(lk => lk.fromElId === el.id || lk.toElId === el.id);
         if (hasLinks) div.classList.add('stair-linked');
 
         const hasULinks = state.universalLinks.some(lk => lk.fromElId === el.id || lk.toElId === el.id);
         if (hasULinks) div.classList.add('universal-linked');
+
+        const hasBridgeLinks = (state.bridgeLinks || []).some(lk => lk.fromElId === el.id || lk.toElId === el.id);
+        if (hasBridgeLinks) div.classList.add('bridge-linked');
 
         div.id = 'el-' + el.id;
         let elevation = 0;
@@ -242,6 +248,8 @@ function renderCanvas() {
         else if (el.type === 'waypoint' || el.name === 'Waypoint') zDepth = el.height3D !== undefined ? el.height3D : 1;
         else if (el.type === 'text' || el.name === 'Text Label') zDepth = el.height3D !== undefined ? el.height3D : 1;
         else if (el.isStairs || el.type === 'Staircase') zDepth = el.height3D !== undefined ? el.height3D : 0;
+        else if (el.type === 'WaterCooler') zDepth = el.height3D !== undefined ? el.height3D : 60;
+        else if (el.type === 'Bridge') zDepth = el.height3D !== undefined ? el.height3D : 8;
         else if (el.height3D !== undefined) zDepth = el.height3D;
 
         const transformStr = state.is3D
@@ -295,6 +303,20 @@ function renderCanvas() {
           div.appendChild(ubadge);
         }
 
+        if (hasBridgeLinks) {
+          const blinks = (state.bridgeLinks || []).filter(lk => lk.fromElId === el.id || lk.toElId === el.id);
+          const bbadge = document.createElement('div');
+          bbadge.className = 'bridge-badge';
+          const bldgNames = new Set();
+          blinks.forEach(lk => {
+            const otherBuildingId = lk.fromElId === el.id ? lk.toBuildingId : lk.fromBuildingId;
+            const bldg = state.buildings.find(b => b.id === otherBuildingId);
+            if (bldg) bldgNames.add(bldg.name);
+          });
+          bbadge.textContent = '🌉 ' + [...bldgNames].join(', ');
+          div.appendChild(bbadge);
+        }
+
         const isCorridor = el.type === 'Corridor' || (el.type && el.type.startsWith('Corridor-'));
         const isStair = el.isStairs || el.type === 'Staircase';
         const isDoorOrWindow = el.type === 'door' || el.type === 'window' || el.type === 'entry_exit' || el.type === 'waypoint';
@@ -306,6 +328,14 @@ function renderCanvas() {
           lbl.dataset.rot = el.r || 0;
           lbl.style.setProperty('--el-rot', `${el.r || 0}deg`);
           div.appendChild(lbl);
+        }
+
+        // Inject water drop icon for WaterCooler
+        if (el.type === 'WaterCooler') {
+          const dropIcon = document.createElement('div');
+          dropIcon.className = 'water-drop-icon';
+          dropIcon.innerHTML = `<svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M12 2C12 2 5 9.5 5 14a7 7 0 0 0 14 0C19 9.5 12 2 12 2Z" fill="rgba(255,255,255,0.9)" stroke="rgba(255,255,255,0.5)" stroke-width="0.8"/><path d="M9 15a3 3 0 0 0 3 3" stroke="rgba(255,255,255,0.7)" stroke-width="1" fill="none" stroke-linecap="round"/></svg>`;
+          div.appendChild(dropIcon);
         }
 
         const dims = document.createElement('div');
@@ -481,6 +511,16 @@ function updatePropsPanel() {
     stairSection.style.display = 'none';
   }
 
+  const bridgeSection = document.getElementById('bridgeLinkSection');
+  if (bridgeSection) {
+    if (el.type === 'Bridge') {
+      bridgeSection.style.display = 'block';
+      renderCurrentBridgeLinks(el);
+    } else {
+      bridgeSection.style.display = 'none';
+    }
+  }
+
   renderCurrentUniversalLinks(el);
 }
 
@@ -580,7 +620,57 @@ function renderUniversalLinksPanel() {
   });
 }
 
+function renderCurrentBridgeLinks(el) {
+  const container = document.getElementById('bridgeCurrentLinks');
+  if (!container) return;
+  container.innerHTML = '';
+  const links = (state.bridgeLinks || []).filter(lk => lk.fromElId === el.id || lk.toElId === el.id);
+  if (links.length === 0) {
+    container.innerHTML = '<div style="font-size:11px;color:var(--text-muted);margin-bottom:6px;">No building connections yet.</div>';
+    return;
+  }
+  links.forEach(lk => {
+    const isFrom = lk.fromElId === el.id;
+    const otherElId = isFrom ? lk.toElId : lk.fromElId;
+    const otherBuildingId = isFrom ? lk.toBuildingId : lk.fromBuildingId;
+    const otherEl = getElById(otherElId);
+    const otherBldg = state.buildings.find(b => b.id === otherBuildingId);
+    const chip = document.createElement('div');
+    chip.className = 'bridge-link-chip';
+    chip.innerHTML = `<span>🌉</span> <span>${otherEl ? otherEl.el.name : '?'} in ${otherBldg ? otherBldg.name : '?'}</span>
+      <span class="remove-link" onclick="removeBridgeLinkById(${lk.id})">✕</span>`;
+    container.appendChild(chip);
+  });
+}
+
+function renderBridgeLinksPanel() {
+  const panel = document.getElementById('bridgeLinksList');
+  if (!panel) return;
+  const links = state.bridgeLinks || [];
+  if (links.length === 0) {
+    panel.innerHTML = '<div class="empty-state">No building bridges yet. Select a Bridge element on the canvas and use "Link Bridge".</div>';
+    return;
+  }
+  panel.innerHTML = '';
+  links.forEach((lk, i) => {
+    const fromEl = getElById(lk.fromElId);
+    const toEl = getElById(lk.toElId);
+    const fromBldg = state.buildings.find(b => b.id === lk.fromBuildingId);
+    const toBldg   = state.buildings.find(b => b.id === lk.toBuildingId);
+    const row = document.createElement('div');
+    row.className = 'stair-link-row';
+    row.innerHTML = `<span class="link-icon" style="font-size:18px;">🌉</span>
+      <span style="flex:1;font-size:12px;line-height:1.4;">
+        <b>${fromEl ? fromEl.el.name : '?'}</b> (${fromBldg ? fromBldg.name : '?'})
+        <br><span style="color:var(--text-muted);">↔</span> <b>${toEl ? toEl.el.name : '?'}</b> (${toBldg ? toBldg.name : '?'})
+      </span>
+      <button class="danger" style="padding:4px;width:24px;height:24px;" onclick="removeBridgeLinkByIndex(${i})"><i data-lucide="trash-2"></i></button>`;
+    panel.appendChild(row);
+  });
+}
+
 function drawPathArrows(path, edges, activeFloorId, animateLines) {
+
   const svg = document.getElementById('pathArrowSvg');
   if (!svg) return;
   svg.innerHTML = '';

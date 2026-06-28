@@ -83,6 +83,8 @@
               <option value="Restroom">Restroom</option>
               <option value="Hall">Hall</option>
               <option value="Elevator">Elevator</option>
+              <option value="WaterCooler">💧 Water Cooler</option>
+              <option value="Bridge">🌉 Bridge</option>
             </select>
             <button class="primary space-add-btn" onclick="addRoom()"><i data-lucide="plus"></i> Add Space</button>
             <div class="control-row" style="margin-top:8px; margin-bottom:4px;">
@@ -143,6 +145,16 @@
               </div>
             </div>
             <button class="secondary-action-btn" onclick="openUniversalLinkManager()"><i data-lucide="settings"></i> Manage All Links</button>
+          </div>
+
+          <div class="panel">
+            <h3><span style="font-size:16px;margin-right:4px;">🌉</span> Building Bridges</h3>
+            <div id="bridgeLinksList">
+              <div class="empty-state">
+                Add a Bridge element, then select it and click "Link Bridge" to connect buildings.
+              </div>
+            </div>
+            <button class="secondary-action-btn" onclick="openBridgeLinkManager()"><i data-lucide="settings"></i> Manage All Bridges</button>
           </div>
 
           <div class="panel properties-panel" id="propsPanel" style="display:none;">
@@ -222,6 +234,14 @@
                 <h4><i data-lucide="chevrons-up-down"></i> Vertical Connections</h4>
                 <div id="stairCurrentLinks"></div>
                 <button class="stair-link-btn" onclick="openLinkThisStair()"><i data-lucide="link"></i> Link Connector</button>
+              </div>
+            </div>
+
+            <div id="bridgeLinkSection" style="display:none;">
+              <div class="stair-props" style="border-color:rgba(251,146,60,0.3);background:rgba(251,146,60,0.05);">
+                <h4 style="color:#fb923c;"><span style="margin-right:4px;">🌉</span> Building Connections</h4>
+                <div id="bridgeCurrentLinks"></div>
+                <button class="stair-link-btn" style="background:#fb923c;border-color:#fb923c;color:#fff;" onclick="openLinkThisBridge()"><i data-lucide="link"></i> Link Bridge</button>
               </div>
             </div>
 
@@ -386,6 +406,43 @@
       <div class="modal-footer" style="justify-content:space-between;">
         <button onclick="document.getElementById('clearCanvasModal').classList.add('hidden')">Cancel</button>
         <button class="danger" onclick="clearCanvas()" style="background:#d9534f;color:#fff;">🗑️ Yes, Clear Everything</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Bridge Link Modal -->
+  <div class="modal-overlay hidden" id="bridgeLinkModal">
+    <div class="modal">
+      <h2>🌉 Link Building Bridge</h2>
+      <p style="font-size:13px;color:#666;margin-bottom:16px;">
+        Connect <strong id="blSourceName"></strong> in <strong id="blSourceBuilding"></strong> to a Bridge element in another building.
+      </p>
+      <div class="modal-section">
+        <label>Target Building</label>
+        <select id="blTargetBuilding" onchange="populateBridgeTargets()"></select>
+      </div>
+      <div class="modal-section">
+        <label>Target Floor</label>
+        <select id="blTargetFloor" onchange="populateBridgeTargetsEl()"></select>
+      </div>
+      <div class="modal-section">
+        <label>Target Bridge Element</label>
+        <select id="blTargetElement"></select>
+      </div>
+      <div class="modal-footer">
+        <button onclick="closeBridgeLinkModal()">Cancel</button>
+        <button style="background:#fb923c;border-color:#fb923c;color:#fff;" onclick="confirmBridgeLink()">🌉 Link Bridge</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Bridge Link Manager Modal -->
+  <div class="modal-overlay hidden" id="bridgeLinkManagerModal">
+    <div class="modal">
+      <h2>🌉 All Building Bridges</h2>
+      <div id="bridgeLinkManagerContent"></div>
+      <div class="modal-footer">
+        <button onclick="document.getElementById('bridgeLinkManagerModal').classList.add('hidden')">Close</button>
       </div>
     </div>
   </div>

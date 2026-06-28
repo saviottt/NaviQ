@@ -24,7 +24,7 @@ function dist(a, b) {
 }
 
 // Passage types — path can only travel THROUGH these element types
-const PASSAGE_TYPES = new Set(['corridor', 'door', 'elevator', 'staircase', 'hall', 'window', 'entry_exit', 'waypoint']);
+const PASSAGE_TYPES = new Set(['corridor', 'door', 'elevator', 'staircase', 'hall', 'window', 'entry_exit', 'waypoint', 'bridge']);
 
 function isPassage(el) {
   const t = (el.type || '').toLowerCase();
@@ -319,6 +319,33 @@ function buildGraph() {
       adj.get(lk.toElId).push({
         neighborId: lk.fromElId, cost: LINK_COST, type: isCrossFloor ? 'universal' : 'same',
         meta: { fromFloorName: toFloor?.name, toFloorName: fromFloor?.name, floorId: lk.fromFloorId, floorName: fromFloor?.name, isUniversalLink: true }
+      });
+    }
+  });
+
+  // Bridge links — cross-building connections (like stair links but horizontal between buildings)
+  const BRIDGE_COST = 150;
+  (state.bridgeLinks || []).forEach(lk => {
+    if (adj.has(lk.fromElId) && adj.has(lk.toElId)) {
+      const fromFloor = state.floors.find(f => f.id === lk.fromFloorId);
+      const toFloor   = state.floors.find(f => f.id === lk.toFloorId);
+      const fromBldg  = state.buildings.find(b => b.id === lk.fromBuildingId);
+      const toBldg    = state.buildings.find(b => b.id === lk.toBuildingId);
+      adj.get(lk.fromElId).push({
+        neighborId: lk.toElId, cost: BRIDGE_COST, type: 'bridge',
+        meta: {
+          fromFloorName: fromFloor?.name, toFloorName: toFloor?.name,
+          fromBuildingName: fromBldg?.name, toBuildingName: toBldg?.name,
+          floorId: lk.toFloorId, floorName: toFloor?.name, isBridgeLink: true
+        }
+      });
+      adj.get(lk.toElId).push({
+        neighborId: lk.fromElId, cost: BRIDGE_COST, type: 'bridge',
+        meta: {
+          fromFloorName: toFloor?.name, toFloorName: fromFloor?.name,
+          fromBuildingName: toBldg?.name, toBuildingName: fromBldg?.name,
+          floorId: lk.fromFloorId, floorName: fromFloor?.name, isBridgeLink: true
+        }
       });
     }
   });
