@@ -1,0 +1,3778 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Building Layout Editor</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box
+    }
+
+    body {
+      font-family: 'Segoe UI', Roboto, sans-serif;
+      background: #eef2f5;
+      color: #333;
+      overflow: hidden;
+    }
+
+    .container {
+      display: flex;
+      flex-direction: column;
+      height: 100vh;
+    }
+
+    /* HEADER */
+    .header {
+      background: #fff;
+      padding: 10px 20px;
+      border-bottom: 1px solid #ddd;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
+      z-index: 100;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+
+    .header h2 {
+      font-size: 18px;
+      margin-right: 20px;
+      color: #4a9eff;
+      white-space: nowrap;
+    }
+
+    .toolbar-group {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+
+    .toolbar-group label {
+      font-size: 13px;
+      font-weight: 500;
+    }
+
+    button {
+      cursor: pointer;
+      border-radius: 4px;
+      border: 1px solid #ccc;
+      background: #f9f9f9;
+      color: #333;
+      padding: 5px 12px;
+      font-size: 13px;
+      transition: 0.2s;
+    }
+
+    button:hover {
+      background: #eef;
+      border-color: #4a9eff;
+      color: #4a9eff;
+    }
+
+    button.primary {
+      background: #4a9eff;
+      color: #fff;
+      border-color: #4a9eff;
+    }
+
+    button.primary:hover {
+      background: #3b8bdb;
+    }
+
+    button.danger {
+      color: #d9534f;
+      border-color: #d9534f;
+    }
+
+    button.danger:hover {
+      background: #d9534f;
+      color: #fff;
+    }
+
+    button.success {
+      background: #27ae60;
+      color: #fff;
+      border-color: #27ae60;
+    }
+
+    button.success:hover {
+      background: #219a52;
+    }
+
+    button.purple {
+      background: #8e44ad;
+      color: #fff;
+      border-color: #8e44ad;
+    }
+
+    button.purple:hover {
+      background: #7d3c98;
+    }
+
+    /* MAIN */
+    .main {
+      display: flex;
+      flex: 1;
+      overflow: hidden;
+    }
+
+    /* SIDEBAR */
+    .sidebar {
+      width: 290px;
+      background: #fff;
+      border-right: 1px solid #ddd;
+      display: flex;
+      flex-direction: column;
+      z-index: 90;
+    }
+
+    .sidebar-scroll {
+      overflow-y: auto;
+      flex: 1;
+      padding: 12px;
+    }
+
+    .panel {
+      background: #fcfcfc;
+      padding: 10px;
+      border-radius: 6px;
+      margin-bottom: 12px;
+      border: 1px solid #e0e0e0;
+    }
+
+    .panel h3 {
+      font-size: 12px;
+      margin-bottom: 8px;
+      color: #555;
+      font-weight: 700;
+      text-transform: uppercase;
+      cursor: pointer;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .panel-content {
+      display: block;
+    }
+
+    .panel.collapsed .panel-content {
+      display: none;
+    }
+
+    input,
+    select {
+      width: 100%;
+      padding: 6px;
+      background: #fff;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+      margin-bottom: 8px;
+      font-size: 13px;
+    }
+
+    input[type="range"] {
+      margin: 0;
+      vertical-align: middle;
+      width: 100px;
+    }
+
+    input[type="checkbox"] {
+      width: auto;
+      margin: 0;
+    }
+
+    .row {
+      display: flex;
+      gap: 5px;
+    }
+
+    label {
+      font-size: 12px;
+      color: #666;
+      display: block;
+      margin-bottom: 3px;
+    }
+
+    /* CANVAS */
+    .canvas-container {
+      flex: 1;
+      background: #d5d9de;
+      overflow: hidden;
+      position: relative;
+      cursor: grab;
+      user-select: none;
+    }
+
+    .canvas-container:active {
+      cursor: grabbing;
+    }
+
+    .canvas-wrap {
+      box-shadow: 0 0 40px rgba(0, 0, 0, 0.15);
+      background: white;
+      transform-origin: 0 0;
+      position: absolute;
+      transition: none;
+    }
+
+    #canvas {
+      position: relative;
+      width: 3000px;
+      height: 2400px;
+      background: #fff;
+      background-image: linear-gradient(rgba(0, 0, 0, .06) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(0, 0, 0, .06) 1px, transparent 1px);
+      background-size: 20px 20px;
+      overflow: hidden;
+      resize: both;
+    }
+
+    #pathArrowSvg {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      pointer-events: none;
+      z-index: 200;
+      overflow: visible;
+    }
+
+    .path-arrow-line {
+      stroke: #e74c3c;
+      stroke-width: 4;
+      fill: none;
+      stroke-dasharray: 12 6;
+      animation: dash-flow 0.5s linear infinite;
+      stroke-linecap: round;
+    }
+
+    .path-arrow-line.stair-line {
+      stroke: #8e44ad;
+      stroke-dasharray: 10 6;
+      stroke-linecap: round;
+    }
+
+    @keyframes dash-flow {
+      to {
+        stroke-dashoffset: -36;
+      }
+    }
+
+    .path-arrow-head {
+      fill: #e74c3c;
+    }
+
+    .path-arrow-head.stair-head {
+      fill: #8e44ad;
+    }
+
+    .path-node-circle {
+      fill: #fff;
+      stroke-width: 2.5;
+    }
+
+    .path-node-circle.start-circle {
+      stroke: #27ae60;
+      fill: #eafaf1;
+    }
+
+    .path-node-circle.end-circle {
+      stroke: #e74c3c;
+      fill: #fdf0ee;
+    }
+
+    .path-node-circle.mid-circle {
+      stroke: #e74c3c;
+      fill: #fff;
+    }
+
+    .path-node-label {
+      font-size: 11px;
+      font-weight: 700;
+      font-family: sans-serif;
+      fill: #333;
+      text-anchor: middle;
+      dominant-baseline: middle;
+    }
+
+    .path-step-badge {
+      font-size: 10px;
+      font-weight: 700;
+      font-family: sans-serif;
+      fill: #fff;
+      text-anchor: middle;
+      dominant-baseline: middle;
+    }
+
+    .path-floor-badge {
+      font-size: 11px;
+      font-family: sans-serif;
+      fill: #8e44ad;
+      text-anchor: middle;
+      font-weight: 600;
+    }
+
+    /* Floor switcher bar for multi-floor paths */
+    #pathFloorBar {
+      display: none;
+      position: absolute;
+      top: 8px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: rgba(255, 255, 255, 0.97);
+      border: 1px solid #ddd;
+      border-radius: 24px;
+      padding: 5px 12px;
+      box-shadow: 0 2px 12px rgba(0, 0, 0, 0.12);
+      z-index: 300;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 13px;
+    }
+
+    #pathFloorBar button {
+      border: none;
+      background: #e9f0ff;
+      color: #2563eb;
+      font-size: 12px;
+      font-weight: 600;
+      border-radius: 16px;
+      padding: 3px 12px;
+      cursor: pointer;
+      transition: background 0.15s;
+    }
+
+    #pathFloorBar button.active {
+      background: #2563eb;
+      color: #fff;
+    }
+
+    #pathFloorBar button:hover {
+      background: #bfdbfe;
+      color: #1d4ed8;
+    }
+
+    #pathClearBtn {
+      display: none;
+    }
+
+    /* ELEMENTS */
+    .element {
+      position: absolute;
+      cursor: grab;
+      user-select: none;
+      border: 1px solid rgba(0, 0, 0, 0.35);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      will-change: transform, left, top;
+      transition: box-shadow 0.1s, border-color 0.1s;
+    }
+
+    .element:hover {
+      border-color: #4a9eff;
+    }
+
+    .element.selected {
+      outline: 2px solid #4a9eff;
+      z-index: 100;
+      box-shadow: 0 4px 15px rgba(0, 0, 0, 0.15);
+    }
+
+    .element.dragging {
+      cursor: grabbing;
+      opacity: 0.9;
+      z-index: 200;
+      transition: none !important;
+    }
+
+    .element.path-highlight {
+      outline: 3px solid #e74c3c !important;
+      box-shadow: 0 0 12px rgba(231, 76, 60, 0.5) !important;
+      z-index: 50;
+    }
+
+    .element.path-start {
+      outline: 3px solid #27ae60 !important;
+      box-shadow: 0 0 12px rgba(39, 174, 96, 0.6) !important;
+    }
+
+    .element.path-end {
+      outline: 3px solid #e74c3c !important;
+      box-shadow: 0 0 12px rgba(231, 76, 60, 0.6) !important;
+    }
+
+    .element.stair-linked {
+      border: 2px dashed #8e44ad !important;
+    }
+
+    .element.staircase-pattern {
+      background-image: repeating-linear-gradient(90deg, transparent, transparent 14px, rgba(0, 0, 0, 0.25) 15px, rgba(0, 0, 0, 0.25) 16px) !important;
+    }
+
+    /* WALL TOOL */
+    .wall-element {
+      position: absolute;
+      background: #2c2c2c;
+      cursor: pointer;
+      user-select: none;
+      z-index: 15;
+      transition: background 0.1s, box-shadow 0.1s;
+      border-radius: 2px;
+    }
+
+    .wall-element:hover {
+      background: #444;
+      box-shadow: 0 0 0 2px rgba(74, 158, 255, 0.5);
+    }
+
+    .wall-element.selected {
+      background: #1a6eff;
+      box-shadow: 0 0 0 2px #4a9eff, 0 0 10px rgba(74, 158, 255, 0.5);
+      outline: none;
+    }
+
+    .wall-element .wall-del-btn {
+      position: absolute;
+      top: -10px;
+      right: -10px;
+      background: #e74c3c;
+      color: #fff;
+      font-size: 10px;
+      width: 18px;
+      height: 18px;
+      border-radius: 50%;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      font-weight: 700;
+      border: none;
+      z-index: 30;
+      line-height: 1;
+      padding: 0;
+    }
+
+    .wall-element.selected .wall-del-btn {
+      display: flex;
+    }
+
+    .wall-element .wall-resize-end {
+      position: absolute;
+      background: #fff;
+      border: 2px solid #4a9eff;
+      border-radius: 50%;
+      width: 10px;
+      height: 10px;
+      z-index: 20;
+      display: none;
+    }
+
+    .wall-element.selected .wall-resize-end {
+      display: block;
+    }
+
+    #wallToolBtn {
+      font-weight: 600;
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      justify-content: center;
+    }
+
+    #wallToolBtn.active {
+      background: #2c2c2c !important;
+      color: #fff !important;
+      border-color: #2c2c2c !important;
+    }
+
+    #wallToolBtn.active:hover {
+      background: #444 !important;
+    }
+
+    #wallDrawPreview {
+      position: absolute;
+      background: rgba(44, 44, 44, 0.45);
+      border: 2px dashed #4a9eff;
+      pointer-events: none;
+      z-index: 500;
+      display: none;
+      border-radius: 2px;
+    }
+
+    /* RESIZE — 8 handles */
+    .resize {
+      width: 10px;
+      height: 10px;
+      background: #fff;
+      border: 2px solid #4a9eff;
+      border-radius: 50%;
+      position: absolute;
+      z-index: 150;
+      display: none;
+    }
+
+    .element.selected .resize {
+      display: block;
+    }
+
+    .resize.nw {
+      left: -5px;
+      top: -5px;
+      cursor: nw-resize;
+    }
+
+    .resize.ne {
+      right: -5px;
+      top: -5px;
+      cursor: ne-resize;
+    }
+
+    .resize.sw {
+      left: -5px;
+      bottom: -5px;
+      cursor: sw-resize;
+    }
+
+    .resize.se {
+      right: -5px;
+      bottom: -5px;
+      cursor: se-resize;
+    }
+
+    .resize.n {
+      left: 50%;
+      top: -5px;
+      transform: translateX(-50%);
+      cursor: n-resize;
+      border-radius: 3px;
+      width: 14px;
+      height: 8px;
+    }
+
+    .resize.s {
+      left: 50%;
+      bottom: -5px;
+      transform: translateX(-50%);
+      cursor: s-resize;
+      border-radius: 3px;
+      width: 14px;
+      height: 8px;
+    }
+
+    .resize.w {
+      top: 50%;
+      left: -5px;
+      transform: translateY(-50%);
+      cursor: w-resize;
+      border-radius: 3px;
+      width: 8px;
+      height: 14px;
+    }
+
+    .resize.e {
+      top: 50%;
+      right: -5px;
+      transform: translateY(-50%);
+      cursor: e-resize;
+      border-radius: 3px;
+      width: 8px;
+      height: 14px;
+    }
+
+    /* LABELS */
+    .label {
+      font-size: 11px;
+      text-align: center;
+      color: #333;
+      pointer-events: none;
+      padding: 2px;
+      line-height: 1.2;
+      user-select: none;
+      width: 100%;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .stair-badge {
+      position: absolute;
+      top: -10px;
+      right: -6px;
+      background: #8e44ad;
+      color: #fff;
+      font-size: 9px;
+      padding: 1px 4px;
+      border-radius: 8px;
+      pointer-events: none;
+      white-space: nowrap;
+      z-index: 200;
+      font-weight: 600;
+    }
+
+    .dims-tag {
+      position: absolute;
+      bottom: -25px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: #333;
+      color: #fff;
+      font-size: 10px;
+      padding: 2px 6px;
+      border-radius: 4px;
+      pointer-events: none;
+      opacity: 0;
+      transition: opacity 0.2s;
+      white-space: nowrap;
+      z-index: 300;
+    }
+
+    .element.dragging .dims-tag,
+    .element.resizing .dims-tag {
+      opacity: 1;
+    }
+
+    /* PATH NUMBER BADGE */
+    .path-num {
+      position: absolute;
+      top: -10px;
+      left: -6px;
+      background: #e74c3c;
+      color: #fff;
+      font-size: 10px;
+      width: 18px;
+      height: 18px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      pointer-events: none;
+      z-index: 300;
+      font-weight: 700;
+      box-shadow: 0 1px 4px rgba(0, 0, 0, 0.3);
+    }
+
+    .path-num.start-num {
+      background: #27ae60;
+    }
+
+    /* FLOOR LIST */
+    .item {
+      padding: 8px;
+      margin-bottom: 4px;
+      background: #f0f0f0;
+      border-radius: 4px;
+      cursor: pointer;
+      border-left: 3px solid transparent;
+      font-size: 13px;
+    }
+
+    .item:hover {
+      background: #e9e9e9;
+    }
+
+    .item.current {
+      background: #e6f4ff;
+      border-color: #4a9eff;
+      color: #0056b3;
+      font-weight: 600;
+    }
+
+    .item-sub {
+      margin-left: 15px;
+      font-size: 12px;
+    }
+
+    /* TOAST */
+    #toast {
+      position: fixed;
+      bottom: 20px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: rgba(0, 0, 0, 0.82);
+      color: white;
+      padding: 10px 20px;
+      border-radius: 30px;
+      font-size: 14px;
+      pointer-events: none;
+      opacity: 0;
+      transition: opacity 0.3s;
+      z-index: 2000;
+    }
+
+    /* ===== MODALS ===== */
+    .modal-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.45);
+      z-index: 3000;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .modal-overlay.hidden {
+      display: none;
+    }
+
+    .modal {
+      background: #fff;
+      border-radius: 12px;
+      padding: 28px;
+      width: 480px;
+      max-width: 95vw;
+      box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+      max-height: 85vh;
+      overflow-y: auto;
+    }
+
+    .modal h2 {
+      font-size: 17px;
+      margin-bottom: 18px;
+      color: #2c3e50;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .modal-section {
+      margin-bottom: 16px;
+    }
+
+    .modal-section label {
+      font-size: 13px;
+      font-weight: 600;
+      color: #555;
+      margin-bottom: 6px;
+      display: block;
+    }
+
+    .modal select {
+      font-size: 13px;
+      padding: 8px;
+      border-radius: 6px;
+    }
+
+    .modal-footer {
+      display: flex;
+      gap: 10px;
+      margin-top: 20px;
+      justify-content: flex-end;
+    }
+
+    /* STAIR LINK MODAL */
+    .stair-link-row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 8px;
+      background: #f8f0ff;
+      border-radius: 6px;
+      margin-bottom: 6px;
+      border: 1px solid #d8b4fe;
+      font-size: 13px;
+    }
+
+    .stair-link-row .link-icon {
+      color: #8e44ad;
+      font-size: 16px;
+    }
+
+    .stair-link-row button {
+      padding: 3px 8px;
+      font-size: 11px;
+    }
+
+    /* PATH RESULT */
+    .path-step {
+      display: flex;
+      align-items: flex-start;
+      gap: 10px;
+      padding: 8px 10px;
+      border-radius: 6px;
+      margin-bottom: 6px;
+      font-size: 13px;
+    }
+
+    .path-step.normal {
+      background: #f0f7ff;
+      border: 1px solid #c3dafe;
+    }
+
+    .path-step.stair-step {
+      background: #fef3c7;
+      border: 1px solid #fbbf24;
+    }
+
+    .path-step.floor-change {
+      background: #f3e8ff;
+      border: 1px solid #c084fc;
+    }
+
+    .path-step .step-num {
+      width: 22px;
+      height: 22px;
+      border-radius: 50%;
+      background: #4a9eff;
+      color: #fff;
+      font-size: 11px;
+      font-weight: 700;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+
+    .path-step.stair-step .step-num {
+      background: #f59e0b;
+    }
+
+    .path-step.floor-change .step-num {
+      background: #8e44ad;
+    }
+
+    .path-step .step-text {
+      line-height: 1.4;
+    }
+
+    .path-step .step-text b {
+      display: block;
+    }
+
+    .path-step .step-text span {
+      color: #666;
+      font-size: 11px;
+    }
+
+    .path-empty {
+      text-align: center;
+      padding: 20px;
+      color: #888;
+      font-size: 14px;
+    }
+
+    .path-summary {
+      background: #ecfdf5;
+      border: 1px solid #6ee7b7;
+      border-radius: 8px;
+      padding: 12px;
+      margin-bottom: 14px;
+      font-size: 13px;
+    }
+
+    .path-summary strong {
+      color: #065f46;
+    }
+
+    /* SHAPED CORRIDORS */
+    .element.corridor-shaped {
+      background: transparent !important;
+      border: none !important;
+      outline: none !important;
+      box-shadow: none !important;
+      overflow: visible;
+    }
+    .element.corridor-shaped:hover {
+      border-color: transparent !important;
+    }
+    .element.corridor-shaped.selected {
+      outline: none !important;
+      box-shadow: none !important;
+    }
+
+    .element.corridor-shaped svg {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      overflow: visible;
+      pointer-events: none;
+    }
+
+    .element.corridor-shaped .label {
+      display: none;
+    }
+
+    .element.corridor-shaped.selected svg .corridor-shape {
+      stroke: #4a9eff !important;
+      stroke-width: 1.5 !important;
+    }
+
+    /* STAIRCASE PROPERTIES EXTRA */
+    .stair-props {
+      background: #f8f0ff;
+      border: 1px solid #d8b4fe;
+      border-radius: 6px;
+      padding: 10px;
+      margin-top: 8px;
+    }
+
+    .stair-props h4 {
+      font-size: 12px;
+      color: #6b21a8;
+      font-weight: 700;
+      text-transform: uppercase;
+      margin-bottom: 8px;
+    }
+
+    .stair-link-chip {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      background: #ede9fe;
+      border: 1px solid #c4b5fd;
+      border-radius: 12px;
+      padding: 3px 8px;
+      font-size: 11px;
+      color: #5b21b6;
+      margin: 2px;
+      cursor: default;
+    }
+
+    .stair-link-chip .remove-link {
+      cursor: pointer;
+      color: #9333ea;
+      font-weight: 700;
+      margin-left: 3px;
+    }
+
+    .stair-link-chip .remove-link:hover {
+      color: #d946ef;
+    }
+
+    /* UNIVERSAL LINK STYLES */
+    .element.universal-linked {
+      border: 2px dashed #0891b2 !important;
+    }
+
+    .universal-badge {
+      position: absolute;
+      bottom: -10px;
+      right: -6px;
+      background: #0891b2;
+      color: #fff;
+      font-size: 9px;
+      padding: 1px 4px;
+      border-radius: 8px;
+      pointer-events: none;
+      white-space: nowrap;
+      z-index: 200;
+      font-weight: 600;
+    }
+
+    .universal-link-chip {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      background: #e0f7fa;
+      border: 1px solid #80deea;
+      border-radius: 12px;
+      padding: 3px 8px;
+      font-size: 11px;
+      color: #006064;
+      margin: 2px;
+      cursor: default;
+    }
+
+    .universal-link-chip .remove-link {
+      cursor: pointer;
+      color: #00838f;
+      font-weight: 700;
+      margin-left: 3px;
+    }
+
+    .universal-link-chip .remove-link:hover {
+      color: #e91e63;
+    }
+
+    .universal-link-row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 8px;
+      background: #e0f7fa;
+      border-radius: 6px;
+      margin-bottom: 6px;
+      border: 1px solid #80deea;
+      font-size: 13px;
+    }
+
+    .universal-link-row .link-icon {
+      color: #0891b2;
+      font-size: 16px;
+    }
+
+    .universal-link-row button {
+      padding: 3px 8px;
+      font-size: 11px;
+    }
+
+    .universal-link-props {
+      background: #e0f7fa;
+      border: 1px solid #80deea;
+      border-radius: 6px;
+      padding: 10px;
+      margin-top: 8px;
+    }
+
+    .universal-link-props h4 {
+      font-size: 12px;
+      color: #006064;
+      font-weight: 700;
+      text-transform: uppercase;
+      margin-bottom: 8px;
+    }
+
+    button.teal {
+      background: #0891b2;
+      color: #fff;
+      border-color: #0891b2;
+    }
+
+    button.teal:hover {
+      background: #0e7490;
+    }
+
+    .path-arrow-line.universal-line {
+      stroke: #0891b2;
+      stroke-dasharray: 6 4;
+    }
+
+    .path-arrow-head.universal-head {
+      fill: #0891b2;
+    }
+  </style>
+</head>
+
+<body>
+
+  <div class="container">
+    <!-- HEADER -->
+    <div class="header">
+      <div class="toolbar-group">
+        <h2>🏢 Building Layout Editor</h2>
+        <button onclick="undo()">↶ Undo</button>
+        <button onclick="redo()">↷ Redo</button>
+        <div style="width:1px;height:20px;background:#ccc;margin:0 5px;"></div>
+        <label style="display:flex;align-items:center;gap:4px;cursor:pointer;">
+          <input type="checkbox" id="snapToggle"> Snap
+        </label>
+      </div>
+      <div class="toolbar-group">
+        <label style="display:flex;align-items:center;gap:4px;">Zoom:
+          <input type="range" id="zoomSlider" min="0.4" max="2" step="0.1" value="1" oninput="updateZoom()">
+          <span id="zoomVal">100%</span>
+        </label>
+        <div style="width:1px;height:20px;background:#ccc;margin:0 5px;"></div>
+        <label style="display:flex;align-items:center;gap:4px;font-size:13px;">Canvas:
+          <input type="number" id="canvasW" value="3000" min="800" step="200"
+            style="width:68px;padding:4px 6px;font-size:12px;margin:0;" title="Canvas width (px)"
+            oninput="resizeCanvas()">
+          <span style="color:#999;font-size:12px;">×</span>
+          <input type="number" id="canvasH" value="2400" min="600" step="200"
+            style="width:68px;padding:4px 6px;font-size:12px;margin:0;" title="Canvas height (px)"
+            oninput="resizeCanvas()">
+        </label>
+        <button onclick="exportJSON()">💾 Save</button>
+        <button onclick="importJSON()">📂 Load</button>
+        <button class="danger" onclick="confirmClearCanvas()" title="Remove all elements, floors, and walls and start fresh">🗑️ Clear Canvas</button>
+        <button class="primary" onclick="exportPDF()">📄 PDF</button>
+        <button class="success" onclick="openPathFinder()">🗺️ Find Path</button>
+        <button id="pathClearBtn" class="danger" style="display:none;" onclick="clearPathHighlights()">✕ Clear
+          Path</button>
+        <button onclick="window.location.href='https://peppy-horse-1e80b7.netlify.app/'">QR</button>
+      </div>
+    </div>
+
+    <div class="main">
+      <!-- SIDEBAR -->
+      <div class="sidebar">
+        <div class="sidebar-scroll">
+
+          <!-- Add Elements -->
+          <div class="panel">
+            <h3>➕ Add Elements</h3>
+            <select id="roomType">
+              <option value="Room">Standard Room</option>
+              <option value="Classroom">Classroom</option>
+              <option value="Office">Office</option>
+              <option value="Corridor" disabled style="font-weight:700;color:#888;background:#f5f5f5;">── Corridor Plans
+                ──</option>
+              <option value="Corridor-Square">▪ Square Plan</option>
+              <option value="Corridor-Rect">▬ Rectangular Plan</option>
+              <option value="Corridor-Circle">◯ Circular Plan</option>
+              <option value="Corridor-Triangle">▲ Triangular Plan</option>
+              <option value="Corridor-L">⌐ L-Shaped Plan</option>
+              <option value="Corridor-T">⊤ T-Shaped Plan</option>
+              <option value="Corridor-U">∪ U-Shaped Plan</option>
+              <option value="Corridor-H">H H-Shaped Plan</option>
+              <option value="Corridor-E">Ǝ E-Shaped Plan</option>
+              <option value="Corridor-Y">Y Y-Shaped Plan</option>
+              <option value="Corridor-Cross">✚ Cross-Shaped Plan</option>
+              <option value="Corridor-Courtyard">⬜ Courtyard Plan</option>
+              <option value="Staircase">Staircase</option>
+              <option value="Restroom">Restroom</option>
+              <option value="Hall">Hall</option>
+              <option value="Elevator">Elevator</option>
+            </select>
+            <button class="primary" style="width:100%;margin-bottom:6px;" onclick="addRoom()">+ Add Space</button>
+            <div class="row">
+              <button style="flex:1" onclick="addEl('door',60,10,'#8B4513','Door')">Door</button>
+              <button style="flex:1" onclick="addEl('window',60,10,'#87CEEB','Window')">Window</button>
+            </div>
+            <div class="row" style="margin-top:4px;">
+              <button id="wallToolBtn" style="flex:1;" onclick="toggleWallTool()">🧱 Draw Wall</button>
+              <button style="flex:1" onclick="deleteSelectedWall()">✕ Del Wall</button>
+            </div>
+            <div id="wallHint"
+              style="display:none;font-size:11px;color:#8e44ad;background:#f3e8ff;border-radius:4px;padding:5px 7px;margin-top:4px;">
+              Click &amp; drag on canvas to draw a wall. Press <b>Esc</b> or click <b>Draw Wall</b> again to exit.
+            </div>
+          </div>
+
+          <!-- Floors & Blocks -->
+          <div class="panel">
+            <h3>🏗️ Floors & Blocks</h3>
+            <div id="floorsList"></div>
+            <div class="row" style="margin-top:8px;">
+              <button style="flex:1" onclick="addFloor()">+ Floor</button>
+              <button style="flex:1" onclick="addBlock()">+ Block</button>
+            </div>
+          </div>
+
+          <!-- Stair Connections -->
+          <div class="panel">
+            <h3>🪜 Stair Connections</h3>
+            <div id="stairLinksList">
+              <div style="font-size:12px;color:#888;text-align:center;padding:8px;">
+                Select a Staircase or Elevator on canvas to link it between floors.
+              </div>
+            </div>
+            <button style="width:100%;margin-top:4px;" onclick="openStairManager()">Manage Stair Links</button>
+          </div>
+
+          <!-- Universal Element Links -->
+          <div class="panel">
+            <h3>🔗 Element Links</h3>
+            <div id="universalLinksList">
+              <div style="font-size:12px;color:#888;text-align:center;padding:8px;">
+                Select any element and use "Link to Any Element" to create cross-floor or same-floor connections.
+              </div>
+            </div>
+            <button style="width:100%;margin-top:4px;" onclick="openUniversalLinkManager()">Manage All Links</button>
+          </div>
+
+          <!-- Properties -->
+          <div class="panel" id="propsPanel" style="display:none;border-color:#4a9eff;background:#f0f8ff;">
+            <h3 style="color:#0056b3">⚙️ Properties</h3>
+            <label>Label</label>
+            <input id="pname" autocomplete="off" />
+            <div class="row">
+              <div style="flex:1"><label>Width</label><input type="number" id="pwidth"></div>
+              <div style="flex:1"><label>Height</label><input type="number" id="pheight"></div>
+            </div>
+            <div class="row">
+              <div style="flex:1"><label>X</label><input type="number" id="px"></div>
+              <div style="flex:1"><label>Y</label><input type="number" id="py"></div>
+            </div>
+            <label>Rotation (°)</label>
+            <input type="range" id="prot" min="0" max="360" step="15" style="width:100%;margin-bottom:8px;">
+            <label>Color</label>
+            <input type="color" id="pcolor" style="height:30px;padding:0;margin-bottom:8px;">
+            <label style="display:flex;align-items:center;gap:6px;cursor:pointer;margin-bottom:8px;">
+              <input type="checkbox" id="pisStairs"> Staircase Pattern
+            </label>
+
+            <!-- Stair linking section — shown only for staircases/elevators -->
+            <div id="stairLinkSection" style="display:none;">
+              <div class="stair-props">
+                <h4>🪜 Floor Connections</h4>
+                <div id="stairCurrentLinks"></div>
+                <button style="width:100%;margin-top:6px;background:#7c3aed;color:#fff;font-weight:700;"
+                  onclick="openLinkThisStair()">🔗 Link to Another Floor</button>
+              </div>
+            </div>
+
+            <!-- Universal linking section — shown for ALL elements -->
+            <div id="universalLinkSection">
+              <div class="universal-link-props">
+                <h4>🔗 Element Links</h4>
+                <div id="universalCurrentLinks"></div>
+                <button class="teal" style="width:100%;margin-top:6px;font-weight:700;"
+                  onclick="openUniversalLinkModal()">🔗 Link to Any Element</button>
+              </div>
+            </div>
+
+            <hr style="border:0;border-top:1px solid #cce;margin:10px 0;">
+            <div class="row">
+              <button style="flex:1" onclick="duplicateSelected()">Duplicate</button>
+              <button class="danger" style="flex:1" onclick="deleteSelected()">Delete</button>
+            </div>
+          </div>
+
+          <!-- Instructions -->
+          <div class="panel">
+            <h3>📖 Instructions</h3>
+            <ul style="font-size:11px;padding-left:16px;color:#666;line-height:1.6;">
+              <li><b>Drag</b> to move rooms</li>
+              <li><b>Corner handle</b> to resize</li>
+              <li><b>Del</b> key to remove</li>
+              <li><b>Ctrl+D</b> to duplicate</li>
+              <li>Click <b>🧱 Draw Wall</b>, then drag on canvas to draw walls</li>
+              <li>Walls <b>block paths</b> — arrows reroute through doors, corridors &amp; elevators</li>
+              <li>Add <b>Staircase</b> or <b>Elevator</b> on multiple floors, then link them via the stair section in
+                Properties</li>
+              <li>Select any element → click <b>🔗 Link to Any Element</b> to connect rooms, corridors, doors, etc.
+                across floors</li>
+              <li>Click <b>🗺️ Find Path</b> to find the shortest route — uses both stair and element links</li>
+            </ul>
+          </div>
+
+        </div>
+      </div>
+
+      <!-- CANVAS -->
+      <div class="canvas-container" id="canvasContainer">
+        <div class="canvas-wrap" id="canvasWrap">
+          <div id="canvas">
+            <svg id="pathArrowSvg" xmlns="http://www.w3.org/2000/svg"></svg>
+            <div id="wallDrawPreview"></div>
+          </div>
+          <div id="pathFloorBar"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div id="toast"></div>
+
+  <!-- Hidden JSON file input -->
+  <input type="file" id="jsonFileInput" accept=".json" style="display:none" onchange="handleJSONImport(event)">
+
+  <!-- ===== STAIR LINK MODAL ===== -->
+  <div class="modal-overlay hidden" id="stairLinkModal">
+    <div class="modal">
+      <h2>🪜 Link Staircase to Another Floor</h2>
+      <p style="font-size:13px;color:#666;margin-bottom:16px;">
+        Connect <strong id="slSourceName"></strong> on <strong id="slSourceFloor"></strong> to a staircase/elevator on
+        another floor.
+      </p>
+      <div class="modal-section">
+        <label>Target Floor</label>
+        <select id="slTargetFloor" onchange="populateTargetStairs()"></select>
+      </div>
+      <div class="modal-section">
+        <label>Target Staircase / Elevator</label>
+        <select id="slTargetStair"></select>
+      </div>
+      <div class="modal-footer">
+        <button onclick="closeStairLinkModal()">Cancel</button>
+        <button class="purple" onclick="confirmStairLink()">🔗 Link Floors</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== STAIR MANAGER MODAL ===== -->
+  <div class="modal-overlay hidden" id="stairManagerModal">
+    <div class="modal">
+      <h2>🪜 All Stair / Elevator Connections</h2>
+      <div id="stairManagerContent"></div>
+      <div class="modal-footer">
+        <button onclick="document.getElementById('stairManagerModal').classList.add('hidden')">Close</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== UNIVERSAL LINK MODAL ===== -->
+  <div class="modal-overlay hidden" id="universalLinkModal">
+    <div class="modal">
+      <h2>🔗 Link Element to Another</h2>
+      <p style="font-size:13px;color:#666;margin-bottom:16px;">
+        Connect <strong id="ulSourceName"></strong> on <strong id="ulSourceFloor"></strong> to any element on any floor.
+      </p>
+      <div class="modal-section">
+        <label>Target Floor</label>
+        <select id="ulTargetFloor" onchange="populateUniversalTargets()"></select>
+      </div>
+      <div class="modal-section">
+        <label>Target Element</label>
+        <select id="ulTargetElement"></select>
+      </div>
+      <div class="modal-footer">
+        <button onclick="closeUniversalLinkModal()">Cancel</button>
+        <button class="teal" onclick="confirmUniversalLink()">🔗 Create Link</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== UNIVERSAL LINK MANAGER MODAL ===== -->
+  <div class="modal-overlay hidden" id="universalLinkManagerModal">
+    <div class="modal">
+      <h2>🔗 All Element Links</h2>
+      <div id="universalLinkManagerContent"></div>
+      <div class="modal-footer">
+        <button onclick="document.getElementById('universalLinkManagerModal').classList.add('hidden')">Close</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== PATH FINDER MODAL ===== -->
+  <div class="modal-overlay hidden" id="pathModal">
+    <div class="modal" style="width:420px;">
+      <h2>🗺️ Find Shortest Path</h2>
+      <div class="modal-section">
+        <label>From (Start Room)</label>
+        <select id="pfFrom" onchange="clearPathResult()"></select>
+      </div>
+      <div class="modal-section">
+        <label>To (End Room)</label>
+        <select id="pfTo" onchange="clearPathResult()"></select>
+      </div>
+      <div id="pathResult" style="margin-top:12px;"></div>
+      <div class="modal-footer" style="justify-content:space-between;align-items:center;margin-top:12px;">
+        <button onclick="closePathModal()">Cancel</button>
+        <div style="display:flex;gap:8px;">
+          <button onclick="clearPathHighlights();clearPathResult();">Clear</button>
+          <button class="success" onclick="runPathFinder()">🔍 Find Path</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Clear Canvas Confirmation Modal -->
+  <div class="modal-overlay hidden" id="clearCanvasModal">
+    <div class="modal" style="width:380px;">
+      <h2>🗑️ Clear Canvas</h2>
+      <p style="margin:14px 0 8px;font-size:14px;color:#444;line-height:1.5;">
+        This will permanently remove <strong>all floors, rooms, elements, walls, and links</strong> and reset the canvas to a blank state.
+      </p>
+      <p style="font-size:13px;color:#d9534f;margin-bottom:16px;">⚠️ This action cannot be undone.</p>
+      <div class="modal-footer" style="justify-content:space-between;">
+        <button onclick="document.getElementById('clearCanvasModal').classList.add('hidden')">Cancel</button>
+        <button class="danger" onclick="clearCanvas()" style="background:#d9534f;color:#fff;">🗑️ Yes, Clear Everything</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- PDF & canvas libs -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+
+  <script>
+    /* =================================================================
+       STATE
+    ================================================================= */
+    let state = {
+      floors: [{
+        id: 1, name: 'Ground Floor',
+        blocks: [{ id: 101, name: 'Block A', elements: [] }]
+      }],
+      // stairLinks: [{fromElId, fromFloorId, fromBlockId, toElId, toFloorId, toBlockId}]
+      stairLinks: [],
+      // universalLinks: [{id, fromElId, fromFloorId, fromBlockId, toElId, toFloorId, toBlockId}]
+      universalLinks: [],
+      // walls: [{id, floorId, x, y, w, h}]  (per-floor walls)
+      walls: [],
+      currFloorId: 1,
+      currBlockId: 101,
+      selectedId: null,
+      selectedWallId: null,
+      zoom: 1,
+      gridSize: 20,
+      panX: 40,
+      panY: 40
+    };
+
+    let undoStack = [], redoStack = [];
+    const canvas = document.getElementById('canvas');
+    const canvasWrap = document.getElementById('canvasWrap');
+
+    /* =================================================================
+       HELPERS
+    ================================================================= */
+    const curFloor = () => state.floors.find(f => f.id === state.currFloorId);
+    const curBlock = () => curFloor().blocks.find(b => b.id === state.currBlockId);
+    const getSelected = () => state.selectedId ? curBlock().elements.find(e => e.id === state.selectedId) : null;
+
+    function allElements() {
+      // Returns [{el, floorId, floorName, blockId, blockName}]
+      const result = [];
+      state.floors.forEach(f => {
+        f.blocks.forEach(b => {
+          b.elements.forEach(el => {
+            result.push({ el, floorId: f.id, floorName: f.name, blockId: b.id, blockName: b.name });
+          });
+        });
+      });
+      return result;
+    }
+
+    function getElById(elId) {
+      return allElements().find(r => r.el.id === elId) || null;
+    }
+
+    function isStairOrElevator(el) {
+      return el.type === 'Staircase' || el.type === 'Elevator' || el.isStairs;
+    }
+
+    function elLabel(rec) {
+      return `${rec.el.name} (${rec.floorName} › ${rec.blockName})`;
+    }
+
+    function saveState() {
+      try {
+        localStorage.setItem('layoutProData', JSON.stringify({ floors: state.floors, stairLinks: state.stairLinks, universalLinks: state.universalLinks, walls: state.walls }));
+        showToast('Saved');
+      } catch (e) { showToast('Save failed'); }
+    }
+
+    function loadSavedState() {
+      try {
+        const raw = localStorage.getItem('layoutProData');
+        if (!raw) return;
+        const parsed = JSON.parse(raw);
+        if (parsed.floors) {
+          state.floors = parsed.floors;
+          state.stairLinks = parsed.stairLinks || [];
+          state.universalLinks = parsed.universalLinks || [];
+          state.walls = parsed.walls || [];
+          state.currFloorId = state.floors[0].id;
+          state.currBlockId = state.floors[0].blocks[0].id;
+          state.selectedId = null;
+        } else if (Array.isArray(parsed)) {
+          // legacy format
+          state.floors = parsed;
+          state.stairLinks = [];
+          state.universalLinks = [];
+          state.walls = [];
+          state.currFloorId = state.floors[0].id;
+          state.currBlockId = state.floors[0].blocks[0].id;
+        }
+        showToast('Layout restored');
+      } catch (e) { console.warn('Restore failed', e); }
+    }
+
+    function pushHistory() {
+      undoStack.push(JSON.stringify({ floors: state.floors, stairLinks: state.stairLinks, universalLinks: state.universalLinks, walls: state.walls }));
+      if (undoStack.length > 30) undoStack.shift();
+      redoStack = [];
+      saveState();
+    }
+
+    window.undo = function () {
+      if (!undoStack.length) return;
+      redoStack.push(JSON.stringify({ floors: state.floors, stairLinks: state.stairLinks, universalLinks: state.universalLinks, walls: state.walls }));
+      const s = JSON.parse(undoStack.pop());
+      state.floors = s.floors; state.stairLinks = s.stairLinks || []; state.universalLinks = s.universalLinks || []; state.walls = s.walls || [];
+      renderAll();
+    };
+    window.redo = function () {
+      if (!redoStack.length) return;
+      undoStack.push(JSON.stringify({ floors: state.floors, stairLinks: state.stairLinks, universalLinks: state.universalLinks, walls: state.walls }));
+      const s = JSON.parse(redoStack.pop());
+      state.floors = s.floors; state.stairLinks = s.stairLinks || []; state.universalLinks = s.universalLinks || []; state.walls = s.walls || [];
+      renderAll();
+    };
+
+    window.confirmClearCanvas = function () {
+      document.getElementById('clearCanvasModal').classList.remove('hidden');
+    };
+
+    window.clearCanvas = function () {
+      document.getElementById('clearCanvasModal').classList.add('hidden');
+      pushHistory(); // allow undo of the clear if needed
+      state.floors = [{ id: 1, name: 'Ground Floor', blocks: [{ id: 101, name: 'Block A', elements: [] }] }];
+      state.stairLinks = [];
+      state.universalLinks = [];
+      state.walls = [];
+      state.currFloorId = 1;
+      state.currBlockId = 101;
+      state.selectedId = null;
+      state.selectedWallId = null;
+      undoStack = [];
+      redoStack = [];
+      localStorage.removeItem('layoutProData');
+      clearPathHighlights();
+      renderAll();
+      showToast('Canvas cleared');
+    };
+
+    function showToast(msg) {
+      const t = document.getElementById('toast');
+      t.textContent = msg; t.style.opacity = 1;
+      setTimeout(() => t.style.opacity = 0, 1800);
+    }
+
+    function snap(val) {
+      if (!document.getElementById('snapToggle').checked) return val;
+      return Math.round(val / state.gridSize) * state.gridSize;
+    }
+
+    /* =================================================================
+       SHAPED CORRIDOR SVG BUILDER
+    ================================================================= */
+    function buildCorridorSvg(el) {
+      const w = el.w, h = el.h;
+      const color = el.color || '#e8f4fd';
+      const stroke = 'none';
+      const sw = 0;
+      const ns = 'http://www.w3.org/2000/svg';
+
+      const svg = document.createElementNS(ns, 'svg');
+      svg.setAttribute('viewBox', `0 0 ${w} ${h}`);
+      svg.setAttribute('preserveAspectRatio', 'none');
+      svg.style.cssText = 'position:absolute;top:0;left:0;width:100%;height:100%;overflow:visible;';
+
+      // arm thickness helpers — always 1/3 of each axis
+      const ax = w / 3;  // horizontal arm thickness
+      const ay = h / 3;  // vertical arm thickness
+
+      const poly = pts => {
+        const el = document.createElementNS(ns, 'polygon');
+        el.setAttribute('points', pts.map(p => p.join(',')).join(' '));
+        return el;
+      };
+      const rect = (x, y, rw, rh) => {
+        const el = document.createElementNS(ns, 'rect');
+        el.setAttribute('x', x); el.setAttribute('y', y);
+        el.setAttribute('width', rw); el.setAttribute('height', rh);
+        return el;
+      };
+      const ellipse = () => {
+        const el = document.createElementNS(ns, 'ellipse');
+        el.setAttribute('cx', w / 2); el.setAttribute('cy', h / 2);
+        el.setAttribute('rx', w / 2 - sw); el.setAttribute('ry', h / 2 - sw);
+        return el;
+      };
+
+      let shape;
+      const t = el.type;
+
+      if (t === 'Corridor-Square' || t === 'Corridor-Rect') {
+        // Solid rectangle / square
+        shape = rect(sw, sw, w - sw * 2, h - sw * 2);
+
+      } else if (t === 'Corridor-Circle') {
+        shape = ellipse();
+
+      } else if (t === 'Corridor-Triangle') {
+        // Triangle: apex top-center
+        shape = poly([[w / 2, sw], [w - sw, h - sw], [sw, h - sw]]);
+
+      } else if (t === 'Corridor-L') {
+        // L: vertical left bar + horizontal bottom bar
+        // Left col full height, bottom row from left col to right
+        const cw = ax, ch = ay;
+        shape = poly([
+          [sw, sw],
+          [sw + cw, sw],
+          [sw + cw, h - sw - ch],
+          [w - sw, h - sw - ch],
+          [w - sw, h - sw],
+          [sw, h - sw],
+        ]);
+
+      } else if (t === 'Corridor-T') {
+        // T: top horizontal bar + center vertical bar down
+        const barH = ay;
+        const colW = ax;
+        const cx = w / 2;
+        shape = poly([
+          [sw, sw],
+          [w - sw, sw],
+          [w - sw, sw + barH],
+          [cx + colW / 2, sw + barH],
+          [cx + colW / 2, h - sw],
+          [cx - colW / 2, h - sw],
+          [cx - colW / 2, sw + barH],
+          [sw, sw + barH],
+        ]);
+
+      } else if (t === 'Corridor-U') {
+        // U: two vertical side bars + horizontal bottom bar
+        const sideW = ax;
+        const botH = ay;
+        // Use path for the hollow inside
+        const p = document.createElementNS(ns, 'path');
+        const ix = sw + sideW;          // inner x start
+        const iy = sw;                  // inner y start
+        const iw = w - sw * 2 - sideW * 2; // inner width
+        const ih = h - sw - botH - sw; // inner height
+        p.setAttribute('d',
+          `M${sw},${sw} L${w - sw},${sw} L${w - sw},${h - sw} L${sw},${h - sw} Z ` +
+          `M${ix},${iy} L${ix},${iy + ih} L${ix + iw},${iy + ih} L${ix + iw},${iy} Z`
+        );
+        p.setAttribute('fill-rule', 'evenodd');
+        p.setAttribute('fill', color);
+        p.setAttribute('stroke', stroke);
+        p.setAttribute('stroke-width', sw);
+        p.setAttribute('stroke-linejoin', 'round');
+        p.classList.add('corridor-shape');
+        svg.appendChild(p);
+        return svg;
+
+      } else if (t === 'Corridor-H') {
+        // H: two vertical bars + horizontal center crossbar
+        const barW = ax;
+        const crossH = ay;
+        const cy = h / 2;
+        shape = poly([
+          // Left bar
+          [sw, sw],
+          [sw + barW, sw],
+          [sw + barW, cy - crossH / 2],
+          // Center crossbar top
+          [w - sw - barW, cy - crossH / 2],
+          [w - sw - barW, sw],
+          [w - sw, sw],
+          [w - sw, h - sw],
+          [w - sw - barW, h - sw],
+          [w - sw - barW, cy + crossH / 2],
+          // Center crossbar bottom
+          [sw + barW, cy + crossH / 2],
+          [sw + barW, h - sw],
+          [sw, h - sw],
+        ]);
+
+      } else if (t === 'Corridor-E') {
+        // E: left vertical bar + 3 horizontal prongs (top, mid, bottom)
+        const barW = ax;
+        const prongH = h / 7;   // each prong thickness
+        const prongL = w - sw;  // full width prongs
+        const midProngL = w * 0.75; // middle prong slightly shorter
+        shape = poly([
+          // Left vertical bar top-left → down
+          [sw, sw],
+          // Top prong →
+          [prongL, sw],
+          [prongL, sw + prongH],
+          [sw + barW, sw + prongH],
+          // Gap down to mid prong
+          [sw + barW, h / 2 - prongH / 2],
+          // Mid prong → (shorter)
+          [midProngL, h / 2 - prongH / 2],
+          [midProngL, h / 2 + prongH / 2],
+          [sw + barW, h / 2 + prongH / 2],
+          // Gap down to bottom prong
+          [sw + barW, h - sw - prongH],
+          // Bottom prong →
+          [prongL, h - sw - prongH],
+          [prongL, h - sw],
+          // Back along bottom of bar
+          [sw, h - sw],
+        ]);
+
+      } else if (t === 'Corridor-Y') {
+        // Y: center vertical stem + two diagonal arms up-left and up-right
+        const stemW = ax * 0.7;
+        const cx = w / 2;
+        // Stem: from bottom center up to h*0.55
+        // Two arms diverge from h*0.55 to top-left and top-right corners area
+        const jY = h * 0.52; // junction Y
+        const armW = ax * 0.65;
+        shape = poly([
+          // Bottom of stem left
+          [cx - stemW / 2, h - sw],
+          // Bottom of stem right
+          [cx + stemW / 2, h - sw],
+          // Stem right up to junction
+          [cx + stemW / 2, jY],
+          // Right arm outer (top-right)
+          [w - sw, sw],
+          [w - sw - armW * 1.1, sw],
+          // Right arm inner back to junction
+          [cx + stemW / 2, jY + armW * 0.5],
+          // tiny flat at junction top
+          [cx - stemW / 2, jY + armW * 0.5],
+          // Left arm inner
+          [sw + armW * 1.1, sw],
+          // Left arm outer
+          [sw, sw],
+          // Left arm back to junction
+          [cx - stemW / 2, jY],
+        ]);
+
+      } else if (t === 'Corridor-Cross') {
+        // Plus / Cross
+        const cx = w / 2, cy = h / 2;
+        shape = poly([
+          [cx - ax / 2, sw],
+          [cx + ax / 2, sw],
+          [cx + ax / 2, cy - ay / 2],
+          [w - sw, cy - ay / 2],
+          [w - sw, cy + ay / 2],
+          [cx + ax / 2, cy + ay / 2],
+          [cx + ax / 2, h - sw],
+          [cx - ax / 2, h - sw],
+          [cx - ax / 2, cy + ay / 2],
+          [sw, cy + ay / 2],
+          [sw, cy - ay / 2],
+          [cx - ax / 2, cy - ay / 2],
+        ]);
+
+      } else if (t === 'Corridor-Courtyard') {
+        // Courtyard: rectangle with hollow square in the middle
+        const margin = Math.min(w, h) * 0.28;
+        const p = document.createElementNS(ns, 'path');
+        p.setAttribute('d',
+          `M${sw},${sw} L${w - sw},${sw} L${w - sw},${h - sw} L${sw},${h - sw} Z ` +
+          `M${sw + margin},${sw + margin} L${sw + margin},${h - sw - margin} ` +
+          `L${w - sw - margin},${h - sw - margin} L${w - sw - margin},${sw + margin} Z`
+        );
+        p.setAttribute('fill-rule', 'evenodd');
+        p.setAttribute('fill', color);
+        p.setAttribute('stroke', stroke);
+        p.setAttribute('stroke-width', sw);
+        p.setAttribute('stroke-linejoin', 'round');
+        p.classList.add('corridor-shape');
+        svg.appendChild(p);
+        return svg;
+      }
+
+      if (shape) {
+        shape.setAttribute('fill', color);
+        shape.setAttribute('stroke', stroke);
+        shape.setAttribute('stroke-width', sw);
+        shape.setAttribute('stroke-linejoin', 'round');
+        shape.classList.add('corridor-shape');
+        svg.appendChild(shape);
+      }
+      return svg;
+    }
+
+    /* =================================================================
+       RENDERING
+    ================================================================= */
+    function renderAll() {
+      renderStructure();
+      renderCanvas();
+      updatePropsPanel();
+      renderStairLinksPanel();
+      renderUniversalLinksPanel();
+    }
+
+    function renderStructure() {
+      const list = document.getElementById('floorsList');
+      list.innerHTML = '';
+      state.floors.forEach(f => {
+        const fDiv = document.createElement('div');
+        fDiv.className = 'item' + (f.id === state.currFloorId ? ' current' : '');
+        fDiv.textContent = f.name;
+        fDiv.onclick = () => { state.currFloorId = f.id; state.currBlockId = f.blocks[0].id; state.selectedId = null; renderAll(); };
+        list.appendChild(fDiv);
+        if (f.id === state.currFloorId) {
+          f.blocks.forEach(b => {
+            const bDiv = document.createElement('div');
+            bDiv.className = 'item item-sub' + (b.id === state.currBlockId ? ' current' : '');
+            bDiv.textContent = b.name;
+            bDiv.onclick = e => { e.stopPropagation(); state.currBlockId = b.id; state.selectedId = null; renderAll(); };
+            list.appendChild(bDiv);
+          });
+        }
+      });
+    }
+
+    function renderCanvas() {
+      // Preserve the SVG arrow overlay
+      const svg = document.getElementById('pathArrowSvg');
+      const svgHtml = svg ? svg.outerHTML : '';
+      canvas.innerHTML = svgHtml || '<svg id="pathArrowSvg" xmlns="http://www.w3.org/2000/svg"></svg>';
+      // Re-add wall preview
+      const preview = document.createElement('div');
+      preview.id = 'wallDrawPreview';
+      canvas.appendChild(preview);
+
+      // Draw walls for current floor
+      const floorWalls = state.walls.filter(w => w.floorId === state.currFloorId);
+      floorWalls.forEach(wall => {
+        const div = document.createElement('div');
+        div.className = 'wall-element';
+        if (wall.id === state.selectedWallId) div.classList.add('selected');
+        div.id = 'wall-' + wall.id;
+        const isHoriz = wall.w >= wall.h;
+        // Ensure minimum thickness for visibility
+        const displayW = isHoriz ? wall.w : Math.max(wall.w, 8);
+        const displayH = isHoriz ? Math.max(wall.h, 8) : wall.h;
+        div.style.cssText = `left:${wall.x}px;top:${wall.y}px;width:${displayW}px;height:${displayH}px;`;
+        div.title = 'Wall — click to select, Del to delete';
+
+        // Delete button (shown when selected)
+        const delBtn = document.createElement('button');
+        delBtn.className = 'wall-del-btn';
+        delBtn.textContent = '✕';
+        delBtn.title = 'Delete wall';
+        delBtn.onmousedown = e => { e.stopPropagation(); };
+        delBtn.onclick = e => { e.stopPropagation(); state.selectedWallId = wall.id; deleteSelectedWall(); };
+        div.appendChild(delBtn);
+
+        // Resize handle at far end
+        const re = document.createElement('div');
+        re.className = 'wall-resize-end';
+        if (isHoriz) {
+          re.style.cssText = 'left:-5px;top:50%;transform:translateY(-50%);cursor:ew-resize;';
+        } else {
+          re.style.cssText = 'bottom:-5px;left:50%;transform:translateX(-50%);cursor:ns-resize;';
+        }
+        re.onmousedown = e => startWallResize(e, wall, isHoriz ? 'h' : 'v');
+        div.appendChild(re);
+
+        div.onmousedown = e => {
+          if (e.target === re || e.target === delBtn) return;
+          e.stopPropagation();
+          state.selectedId = null;
+          state.selectedWallId = wall.id;
+          renderAll();
+          startWallDrag(e, wall);
+        };
+        canvas.appendChild(div);
+      });
+
+      const block = curBlock();
+      block.elements.forEach(el => {
+        const div = document.createElement('div');
+        div.className = 'element';
+        if (el.id === state.selectedId) div.classList.add('selected');
+        if (el.isStairs) div.classList.add('staircase-pattern');
+
+        // Check if this element has stair links
+        const hasLinks = state.stairLinks.some(lk => lk.fromElId === el.id || lk.toElId === el.id);
+        if (hasLinks) div.classList.add('stair-linked');
+
+        // Check if this element has universal links
+        const hasULinks = state.universalLinks.some(lk => lk.fromElId === el.id || lk.toElId === el.id);
+        if (hasULinks) div.classList.add('universal-linked');
+
+        div.id = 'el-' + el.id;
+        div.style.cssText = `left:${el.x}px;top:${el.y}px;width:${el.w}px;height:${el.h}px;background-color:${el.color};transform:rotate(${el.r}deg);z-index:${el.id === state.selectedId ? 100 : 1};`;
+
+        // Shaped corridor rendering
+        if (el.type && el.type.startsWith('Corridor-')) {
+          div.classList.add('corridor-shaped');
+          div.style.backgroundColor = 'transparent';
+          div.style.border = 'none';
+          div.style.outline = 'none';
+          div.style.boxShadow = 'none';
+          const svg = buildCorridorSvg(el);
+          div.appendChild(svg);
+        }
+
+        // Stair badge
+        if (hasLinks) {
+          const links = state.stairLinks.filter(lk => lk.fromElId === el.id || lk.toElId === el.id);
+          const badge = document.createElement('div');
+          badge.className = 'stair-badge';
+          const floorNums = new Set();
+          links.forEach(lk => {
+            const otherFloorId = lk.fromElId === el.id ? lk.toFloorId : lk.fromFloorId;
+            const f = state.floors.find(fl => fl.id === otherFloorId);
+            if (f) floorNums.add(f.name.replace('Floor', 'Fl').replace('Ground', 'G'));
+          });
+          badge.textContent = '🪜 ' + [...floorNums].join(', ');
+          div.appendChild(badge);
+        }
+
+        // Universal link badge
+        if (hasULinks) {
+          const ulinks = state.universalLinks.filter(lk => lk.fromElId === el.id || lk.toElId === el.id);
+          const ubadge = document.createElement('div');
+          ubadge.className = 'universal-badge';
+          const ufloorNums = new Set();
+          ulinks.forEach(lk => {
+            const otherFloorId = lk.fromElId === el.id ? lk.toFloorId : lk.fromFloorId;
+            const otherElId = lk.fromElId === el.id ? lk.toElId : lk.fromElId;
+            const f = state.floors.find(fl => fl.id === otherFloorId);
+            const otherEl = getElById(otherElId);
+            if (f) ufloorNums.add((otherEl ? otherEl.el.name : '?') + ' (' + f.name.replace('Floor', 'Fl').replace('Ground', 'G') + ')');
+          });
+          ubadge.textContent = '🔗 ' + [...ufloorNums].join(', ');
+          div.appendChild(ubadge);
+        }
+
+        const lbl = document.createElement('div');
+        lbl.className = 'label';
+        lbl.textContent = el.name;
+        div.appendChild(lbl);
+
+        const dims = document.createElement('div');
+        dims.className = 'dims-tag';
+        dims.id = 'dims-' + el.id;
+        dims.textContent = `${el.w} × ${el.h}`;
+        div.appendChild(dims);
+
+        ['nw', 'n', 'ne', 'w', 'e', 'sw', 's', 'se'].forEach(dir => {
+          const h = document.createElement('div');
+          h.className = 'resize ' + dir;
+          h.onmousedown = e => startResize(e, el, dir);
+          div.appendChild(h);
+        });
+
+        div.onmousedown = e => startDrag(e, el);
+        canvas.appendChild(div);
+      });
+    }
+
+    function updatePropsPanel() {
+      const panel = document.getElementById('propsPanel');
+      const el = getSelected();
+      if (!el) { panel.style.display = 'none'; return; }
+      panel.style.display = 'block';
+      document.getElementById('pname').value = el.name;
+      // Show shape type badge for shaped corridors
+      let shapeInfo = document.getElementById('pShapeInfo');
+      if (!shapeInfo) {
+        shapeInfo = document.createElement('div');
+        shapeInfo.id = 'pShapeInfo';
+        shapeInfo.style.cssText = 'font-size:11px;background:#e8f4fd;border:1px solid #a0c4e8;border-radius:4px;padding:4px 8px;margin-bottom:8px;color:#1a6aaa;font-weight:600;display:none;';
+        document.getElementById('pname').parentNode.insertBefore(shapeInfo, document.getElementById('pname'));
+      }
+      const shapeNames = { 'Corridor-Triangle': '▲ Triangle Corridor', 'Corridor-Circle': '◯ Oval Corridor', 'Corridor-Cross': '✚ Cross Corridor' };
+      if (shapeNames[el.type]) {
+        shapeInfo.textContent = shapeNames[el.type];
+        shapeInfo.style.display = 'block';
+      } else {
+        shapeInfo.style.display = 'none';
+      }
+      document.getElementById('pwidth').value = el.w;
+      document.getElementById('pheight').value = el.h;
+      document.getElementById('px').value = el.x;
+      document.getElementById('py').value = el.y;
+      document.getElementById('prot').value = el.r;
+      document.getElementById('pcolor').value = el.color;
+      document.getElementById('pisStairs').checked = el.isStairs || false;
+
+      // Show stair linking section for staircases/elevators
+      const stairSection = document.getElementById('stairLinkSection');
+      if (isStairOrElevator(el)) {
+        stairSection.style.display = 'block';
+        renderCurrentStairLinks(el);
+      } else {
+        stairSection.style.display = 'none';
+      }
+
+      // Show universal linking section for ALL elements
+      renderCurrentUniversalLinks(el);
+    }
+
+    function renderCurrentStairLinks(el) {
+      const container = document.getElementById('stairCurrentLinks');
+      container.innerHTML = '';
+      const links = state.stairLinks.filter(lk => lk.fromElId === el.id || lk.toElId === el.id);
+      if (links.length === 0) {
+        container.innerHTML = '<div style="font-size:11px;color:#888;margin-bottom:6px;">No connections yet.</div>';
+        return;
+      }
+      links.forEach(lk => {
+        const isFrom = lk.fromElId === el.id;
+        const otherElId = isFrom ? lk.toElId : lk.fromElId;
+        const otherFloorId = isFrom ? lk.toFloorId : lk.fromFloorId;
+        const otherEl = getElById(otherElId);
+        const otherFloor = state.floors.find(f => f.id === otherFloorId);
+        const chip = document.createElement('div');
+        chip.className = 'stair-link-chip';
+        chip.innerHTML = `🪜 ${otherEl ? otherEl.el.name : '?'} on ${otherFloor ? otherFloor.name : '?'}
+      <span class="remove-link" onclick="removeStairLink(${JSON.stringify(lk).replace(/"/g, "'")})">✕</span>`;
+        container.appendChild(chip);
+      });
+    }
+
+    function renderStairLinksPanel() {
+      const panel = document.getElementById('stairLinksList');
+      if (state.stairLinks.length === 0) {
+        panel.innerHTML = '<div style="font-size:12px;color:#888;text-align:center;padding:8px;">No stair connections yet. Select a Staircase on the canvas.</div>';
+        return;
+      }
+      panel.innerHTML = '';
+      state.stairLinks.forEach((lk, i) => {
+        const fromEl = getElById(lk.fromElId);
+        const toEl = getElById(lk.toElId);
+        const fromFloor = state.floors.find(f => f.id === lk.fromFloorId);
+        const toFloor = state.floors.find(f => f.id === lk.toFloorId);
+        const row = document.createElement('div');
+        row.className = 'stair-link-row';
+        row.innerHTML = `<span class="link-icon">🪜</span>
+      <span style="flex:1;font-size:12px;">
+        <b>${fromEl ? fromEl.el.name : '?'}</b> (${fromFloor ? fromFloor.name : '?'})
+        <br>↕ <b>${toEl ? toEl.el.name : '?'}</b> (${toFloor ? toFloor.name : '?'})
+      </span>
+      <button class="danger" onclick="removeStairLinkByIndex(${i})">✕</button>`;
+        panel.appendChild(row);
+      });
+    }
+
+    function renderCurrentUniversalLinks(el) {
+      const container = document.getElementById('universalCurrentLinks');
+      container.innerHTML = '';
+      const links = state.universalLinks.filter(lk => lk.fromElId === el.id || lk.toElId === el.id);
+      if (links.length === 0) {
+        container.innerHTML = '<div style="font-size:11px;color:#888;margin-bottom:6px;">No element links yet.</div>';
+        return;
+      }
+      links.forEach(lk => {
+        const isFrom = lk.fromElId === el.id;
+        const otherElId = isFrom ? lk.toElId : lk.fromElId;
+        const otherFloorId = isFrom ? lk.toFloorId : lk.fromFloorId;
+        const otherEl = getElById(otherElId);
+        const otherFloor = state.floors.find(f => f.id === otherFloorId);
+        const chip = document.createElement('div');
+        chip.className = 'universal-link-chip';
+        chip.innerHTML = `🔗 ${otherEl ? otherEl.el.name : '?'} on ${otherFloor ? otherFloor.name : '?'}
+      <span class="remove-link" onclick="removeUniversalLinkById(${lk.id})">✕</span>`;
+        container.appendChild(chip);
+      });
+    }
+
+    function renderUniversalLinksPanel() {
+      const panel = document.getElementById('universalLinksList');
+      if (state.universalLinks.length === 0) {
+        panel.innerHTML = '<div style="font-size:12px;color:#888;text-align:center;padding:8px;">No element links yet. Select any element and use \"Link to Any Element\".</div>';
+        return;
+      }
+      panel.innerHTML = '';
+      state.universalLinks.forEach((lk, i) => {
+        const fromEl = getElById(lk.fromElId);
+        const toEl = getElById(lk.toElId);
+        const fromFloor = state.floors.find(f => f.id === lk.fromFloorId);
+        const toFloor = state.floors.find(f => f.id === lk.toFloorId);
+        const row = document.createElement('div');
+        row.className = 'universal-link-row';
+        row.innerHTML = `<span class="link-icon">🔗</span>
+      <span style="flex:1;font-size:12px;">
+        <b>${fromEl ? fromEl.el.name : '?'}</b> (${fromFloor ? fromFloor.name : '?'})
+        <br>↔ <b>${toEl ? toEl.el.name : '?'}</b> (${toFloor ? toFloor.name : '?'})
+      </span>
+      <button class="danger" onclick="removeUniversalLinkByIndex(${i})">✕</button>`;
+        panel.appendChild(row);
+      });
+    }
+
+    /* =================================================================
+       ACTIONS
+    ================================================================= */
+    window.addFloor = function () {
+      pushHistory();
+      const id = Date.now();
+      state.floors.push({ id, name: 'Floor ' + state.floors.length, blocks: [{ id: id + 1, name: 'Block A', elements: [] }] });
+      renderStructure();
+      showToast('Floor added');
+    };
+
+    window.addBlock = function () {
+      pushHistory();
+      const floor = curFloor(); const id = Date.now();
+      floor.blocks.push({ id, name: 'Block ' + String.fromCharCode(65 + floor.blocks.length), elements: [] });
+      state.currBlockId = id; renderAll();
+    };
+
+    window.addEl = function (type, w, h, color, defaultName) {
+      pushHistory();
+      const id = Date.now();
+      const newEl = { id, type, name: defaultName || type, x: 20, y: 20, w, h, r: 0, color, isStairs: false };
+      curBlock().elements.push(newEl);
+      state.selectedId = id; renderAll();
+    };
+
+    window.addRoom = function () {
+      const type = document.getElementById('roomType').value;
+      const map = {
+        Room: [150, 100, '#fff'],
+        Classroom: [200, 160, '#eef7fa'],
+        Office: [120, 100, '#f5f5dc'],
+        Corridor: [300, 60, '#f0f0f0'],
+        'Corridor-Square': [200, 200, '#e8f4fd'],
+        'Corridor-Rect': [280, 160, '#e8f4fd'],
+        'Corridor-Circle': [200, 200, '#e8f4fd'],
+        'Corridor-Triangle': [220, 180, '#e8f4fd'],
+        'Corridor-L': [220, 220, '#e8f4fd'],
+        'Corridor-T': [240, 200, '#e8f4fd'],
+        'Corridor-U': [240, 220, '#e8f4fd'],
+        'Corridor-H': [240, 220, '#e8f4fd'],
+        'Corridor-E': [220, 220, '#e8f4fd'],
+        'Corridor-Y': [220, 240, '#e8f4fd'],
+        'Corridor-Cross': [220, 220, '#e8f4fd'],
+        'Corridor-Courtyard': [240, 240, '#e8f4fd'],
+        Staircase: [100, 140, '#e8d5f5'],
+        Restroom: [100, 80, '#e8f5e9'],
+        Hall: [250, 180, '#fff9e6'],
+        Elevator: [80, 80, '#d5e8f5'],
+      };
+      const [w, h, color] = map[type] || [150, 100, '#fff'];
+      window.addEl(type, w, h, color, type);
+      const created = curBlock().elements[curBlock().elements.length - 1];
+      if (type === 'Staircase') created.isStairs = true;
+      renderAll();
+    };
+
+    window.deleteSelected = function () {
+      if (!state.selectedId) return;
+      pushHistory();
+      // Remove any stair links involving this element
+      state.stairLinks = state.stairLinks.filter(lk => lk.fromElId !== state.selectedId && lk.toElId !== state.selectedId);
+      // Remove any universal links involving this element
+      state.universalLinks = state.universalLinks.filter(lk => lk.fromElId !== state.selectedId && lk.toElId !== state.selectedId);
+      curBlock().elements = curBlock().elements.filter(e => e.id !== state.selectedId);
+      state.selectedId = null; renderAll();
+    };
+
+    window.duplicateSelected = function () {
+      const el = getSelected(); if (!el) return;
+      pushHistory();
+      const clone = JSON.parse(JSON.stringify(el));
+      clone.id = Date.now(); clone.x += 20; clone.y += 20; clone.name += ' (Copy)';
+      curBlock().elements.push(clone);
+      state.selectedId = clone.id; renderAll();
+    };
+
+    /* =================================================================
+       STAIR LINKING
+    ================================================================= */
+    let _pendingStairSource = null; // {elId, floorId, blockId}
+
+    window.openLinkThisStair = function () {
+      const el = getSelected();
+      if (!el) return;
+      _pendingStairSource = { elId: el.id, floorId: state.currFloorId, blockId: state.currBlockId };
+      openStairLinkModal(_pendingStairSource);
+    };
+
+    function openStairLinkModal(source) {
+      const sourceRec = getElById(source.elId);
+      const sourceFloor = state.floors.find(f => f.id === source.floorId);
+      document.getElementById('slSourceName').textContent = sourceRec ? sourceRec.el.name : '?';
+      document.getElementById('slSourceFloor').textContent = sourceFloor ? sourceFloor.name : '?';
+
+      // Populate target floors (all except current)
+      const tfSelect = document.getElementById('slTargetFloor');
+      tfSelect.innerHTML = '';
+      state.floors.filter(f => f.id !== source.floorId).forEach(f => {
+        const opt = document.createElement('option');
+        opt.value = f.id; opt.textContent = f.name;
+        tfSelect.appendChild(opt);
+      });
+
+      if (!tfSelect.options.length) {
+        alert('Add at least 2 floors first to create stair connections.');
+        return;
+      }
+
+      populateTargetStairs();
+      document.getElementById('stairLinkModal').classList.remove('hidden');
+    }
+
+    window.populateTargetStairs = function () {
+      const floorId = parseInt(document.getElementById('slTargetFloor').value);
+      const floor = state.floors.find(f => f.id === floorId);
+      const tsSelect = document.getElementById('slTargetStair');
+      tsSelect.innerHTML = '';
+      if (!floor) return;
+      const stairs = [];
+      floor.blocks.forEach(b => {
+        b.elements.forEach(el => {
+          if (isStairOrElevator(el)) stairs.push({ el, blockId: b.id, floorId });
+        });
+      });
+      if (stairs.length === 0) {
+        const opt = document.createElement('option'); opt.value = ''; opt.textContent = '— No staircases on this floor —';
+        tsSelect.appendChild(opt);
+      } else {
+        stairs.forEach(s => {
+          const opt = document.createElement('option'); opt.value = s.el.id; opt.textContent = s.el.name;
+          tsSelect.appendChild(opt);
+        });
+      }
+    };
+
+    window.confirmStairLink = function () {
+      const toElId = parseInt(document.getElementById('slTargetStair').value);
+      const toFloorId = parseInt(document.getElementById('slTargetFloor').value);
+      if (!toElId) { alert('No target staircase available on that floor.'); return; }
+
+      const toFloor = state.floors.find(f => f.id === toFloorId);
+      let toBlockId = null;
+      toFloor.blocks.forEach(b => { if (b.elements.find(e => e.id === toElId)) toBlockId = b.id; });
+
+      // Prevent duplicate
+      const exists = state.stairLinks.some(lk =>
+        (lk.fromElId === _pendingStairSource.elId && lk.toElId === toElId) ||
+        (lk.fromElId === toElId && lk.toElId === _pendingStairSource.elId)
+      );
+      if (exists) { showToast('Link already exists!'); closeStairLinkModal(); return; }
+
+      pushHistory();
+      state.stairLinks.push({
+        fromElId: _pendingStairSource.elId,
+        fromFloorId: _pendingStairSource.floorId,
+        fromBlockId: _pendingStairSource.blockId,
+        toElId, toFloorId, toBlockId
+      });
+      closeStairLinkModal();
+      renderAll();
+      showToast('Floors linked via staircase!');
+    };
+
+    window.closeStairLinkModal = function () {
+      document.getElementById('stairLinkModal').classList.add('hidden');
+    };
+
+    window.removeStairLinkByIndex = function (i) {
+      pushHistory();
+      state.stairLinks.splice(i, 1);
+      renderAll();
+      showToast('Link removed');
+    };
+
+    window.removeStairLink = function (lkStr) {
+      // lkStr came from JSON stringified with single quotes replaced
+      // We'll match by fromElId+toElId
+      try {
+        const lk = typeof lkStr === 'object' ? lkStr : JSON.parse(lkStr.replace(/'/g, '"'));
+        const idx = state.stairLinks.findIndex(l => l.fromElId === lk.fromElId && l.toElId === lk.toElId);
+        if (idx >= 0) { pushHistory(); state.stairLinks.splice(idx, 1); renderAll(); showToast('Link removed'); }
+      } catch (e) { console.error(e); }
+    };
+
+    window.openStairManager = function () {
+      const content = document.getElementById('stairManagerContent');
+      if (state.stairLinks.length === 0) {
+        content.innerHTML = '<div class="path-empty">No stair connections have been created yet.</div>';
+      } else {
+        content.innerHTML = '';
+        state.stairLinks.forEach((lk, i) => {
+          const fromEl = getElById(lk.fromElId);
+          const toEl = getElById(lk.toElId);
+          const fromFloor = state.floors.find(f => f.id === lk.fromFloorId);
+          const toFloor = state.floors.find(f => f.id === lk.toFloorId);
+          const row = document.createElement('div');
+          row.className = 'stair-link-row';
+          row.innerHTML = `<span class="link-icon">🪜</span>
+        <span style="flex:1;font-size:13px;">
+          <b>${fromEl ? fromEl.el.name : '?'}</b> on ${fromFloor ? fromFloor.name : '?'}
+          &nbsp;↔&nbsp;
+          <b>${toEl ? toEl.el.name : '?'}</b> on ${toFloor ? toFloor.name : '?'}
+        </span>
+        <button class="danger" onclick="removeStairLinkByIndex(${i});openStairManager();">✕ Remove</button>`;
+          content.appendChild(row);
+        });
+      }
+      document.getElementById('stairManagerModal').classList.remove('hidden');
+    };
+
+    /* =================================================================
+       UNIVERSAL ELEMENT LINKING
+    ================================================================= */
+    let _pendingUniversalSource = null; // {elId, floorId, blockId}
+
+    window.openUniversalLinkModal = function () {
+      const el = getSelected();
+      if (!el) { showToast('Select an element first'); return; }
+      _pendingUniversalSource = { elId: el.id, floorId: state.currFloorId, blockId: state.currBlockId };
+
+      const sourceRec = getElById(el.id);
+      const sourceFloor = state.floors.find(f => f.id === state.currFloorId);
+      document.getElementById('ulSourceName').textContent = sourceRec ? sourceRec.el.name : '?';
+      document.getElementById('ulSourceFloor').textContent = sourceFloor ? sourceFloor.name : '?';
+
+      // Populate target floors (ALL floors including current)
+      const tfSelect = document.getElementById('ulTargetFloor');
+      tfSelect.innerHTML = '';
+      state.floors.forEach(f => {
+        const opt = document.createElement('option');
+        opt.value = f.id; opt.textContent = f.name;
+        tfSelect.appendChild(opt);
+      });
+
+      if (!tfSelect.options.length) {
+        alert('No floors available.');
+        return;
+      }
+
+      // Default to a different floor if available
+      const otherFloor = state.floors.find(f => f.id !== state.currFloorId);
+      if (otherFloor) tfSelect.value = otherFloor.id;
+
+      populateUniversalTargets();
+      document.getElementById('universalLinkModal').classList.remove('hidden');
+    };
+
+    window.populateUniversalTargets = function () {
+      const floorId = parseInt(document.getElementById('ulTargetFloor').value);
+      const floor = state.floors.find(f => f.id === floorId);
+      const teSelect = document.getElementById('ulTargetElement');
+      teSelect.innerHTML = '';
+      if (!floor) return;
+      const targets = [];
+      floor.blocks.forEach(b => {
+        b.elements.forEach(el => {
+          // Exclude the source element itself
+          if (_pendingUniversalSource && el.id === _pendingUniversalSource.elId) return;
+          targets.push({ el, blockId: b.id, blockName: b.name, floorId });
+        });
+      });
+      if (targets.length === 0) {
+        const opt = document.createElement('option'); opt.value = ''; opt.textContent = '— No elements on this floor —';
+        teSelect.appendChild(opt);
+      } else {
+        targets.forEach(t => {
+          const opt = document.createElement('option');
+          opt.value = t.el.id;
+          opt.textContent = `${t.el.name} (${t.el.type}) — ${t.blockName}`;
+          teSelect.appendChild(opt);
+        });
+      }
+    };
+
+    window.confirmUniversalLink = function () {
+      const toElId = parseInt(document.getElementById('ulTargetElement').value);
+      const toFloorId = parseInt(document.getElementById('ulTargetFloor').value);
+      if (!toElId) { alert('No target element available.'); return; }
+
+      const toFloor = state.floors.find(f => f.id === toFloorId);
+      let toBlockId = null;
+      toFloor.blocks.forEach(b => { if (b.elements.find(e => e.id === toElId)) toBlockId = b.id; });
+
+      // Prevent duplicate
+      const exists = state.universalLinks.some(lk =>
+        (lk.fromElId === _pendingUniversalSource.elId && lk.toElId === toElId) ||
+        (lk.fromElId === toElId && lk.toElId === _pendingUniversalSource.elId)
+      );
+      // Also check stair links for duplicate
+      const existsStair = state.stairLinks.some(lk =>
+        (lk.fromElId === _pendingUniversalSource.elId && lk.toElId === toElId) ||
+        (lk.fromElId === toElId && lk.toElId === _pendingUniversalSource.elId)
+      );
+      if (exists || existsStair) { showToast('Link already exists!'); closeUniversalLinkModal(); return; }
+
+      pushHistory();
+      state.universalLinks.push({
+        id: Date.now(),
+        fromElId: _pendingUniversalSource.elId,
+        fromFloorId: _pendingUniversalSource.floorId,
+        fromBlockId: _pendingUniversalSource.blockId,
+        toElId, toFloorId, toBlockId
+      });
+      closeUniversalLinkModal();
+      renderAll();
+      showToast('Elements linked!');
+    };
+
+    window.closeUniversalLinkModal = function () {
+      document.getElementById('universalLinkModal').classList.add('hidden');
+    };
+
+    window.removeUniversalLinkById = function (linkId) {
+      pushHistory();
+      state.universalLinks = state.universalLinks.filter(lk => lk.id !== linkId);
+      renderAll();
+      showToast('Link removed');
+    };
+
+    window.removeUniversalLinkByIndex = function (i) {
+      pushHistory();
+      state.universalLinks.splice(i, 1);
+      renderAll();
+      showToast('Link removed');
+    };
+
+    window.openUniversalLinkManager = function () {
+      const content = document.getElementById('universalLinkManagerContent');
+      if (state.universalLinks.length === 0) {
+        content.innerHTML = '<div class="path-empty">No element links have been created yet.</div>';
+      } else {
+        content.innerHTML = '';
+        state.universalLinks.forEach((lk, i) => {
+          const fromEl = getElById(lk.fromElId);
+          const toEl = getElById(lk.toElId);
+          const fromFloor = state.floors.find(f => f.id === lk.fromFloorId);
+          const toFloor = state.floors.find(f => f.id === lk.toFloorId);
+          const row = document.createElement('div');
+          row.className = 'universal-link-row';
+          row.innerHTML = `<span class="link-icon">🔗</span>
+        <span style="flex:1;font-size:13px;">
+          <b>${fromEl ? fromEl.el.name : '?'}</b> on ${fromFloor ? fromFloor.name : '?'}
+          &nbsp;↔&nbsp;
+          <b>${toEl ? toEl.el.name : '?'}</b> on ${toFloor ? toFloor.name : '?'}
+        </span>
+        <button class="danger" onclick="removeUniversalLinkByIndex(${i});openUniversalLinkManager();">✕ Remove</button>`;
+          content.appendChild(row);
+        });
+      }
+      document.getElementById('universalLinkManagerModal').classList.remove('hidden');
+    };
+
+    /* =================================================================
+       PATH FINDER (Dijkstra across floors)
+    ================================================================= */
+    /*
+      Graph nodes: every element gets a unique node key = "elId"
+      Edges:
+        1. Same floor/block: two elements are adjacent if they physically overlap or touch (bounding boxes)
+        2. Cross-floor: stairLinks connect stair elements between floors with a cost of 100 (floor-change penalty)
+      
+      Cost: Euclidean distance between element centers for same-floor edges, fixed cost for stair traversal.
+    */
+
+    function rectCenter(el) {
+      return { x: el.x + el.w / 2, y: el.y + el.h / 2 };
+    }
+
+    function rectsOverlapOrTouch(a, b, tolerance = 5) {
+      return !(a.x + a.w + tolerance < b.x ||
+        b.x + b.w + tolerance < a.x ||
+        a.y + a.h + tolerance < b.y ||
+        b.y + b.h + tolerance < a.y);
+    }
+
+    function dist(a, b) {
+      const ca = rectCenter(a), cb = rectCenter(b);
+      return Math.sqrt((ca.x - cb.x) ** 2 + (ca.y - cb.y) ** 2);
+    }
+
+    // Passage types — path can only travel THROUGH these element types
+    // (directly between two rooms, one of them must be a passage/door/elevator or they must share an open boundary)
+    const PASSAGE_TYPES = new Set(['corridor', 'door', 'elevator', 'staircase', 'hall', 'window']);
+
+    function isPassage(el) {
+      const t = (el.type || '').toLowerCase();
+      return PASSAGE_TYPES.has(t) || t.startsWith('corridor') || el.isStairs;
+    }
+
+    // Returns the shared edge region between two touching rects, or null if not touching
+    function getSharedEdge(a, b, tolerance = 8) {
+      const aR = a.x + a.w, aB = a.y + a.h;
+      const bR = b.x + b.w, bB = b.y + b.h;
+
+      // Vertical shared edge (left-right)
+      if (Math.abs(aR - b.x) <= tolerance || Math.abs(bR - a.x) <= tolerance) {
+        const edgeX = Math.abs(aR - b.x) <= tolerance ? (aR + b.x) / 2 : (bR + a.x) / 2;
+        const y0 = Math.max(a.y, b.y), y1 = Math.min(aB, bB);
+        if (y1 > y0) return { x: edgeX, y: (y0 + y1) / 2, y0, y1, x0: edgeX, x1: edgeX, axis: 'v' };
+      }
+      // Horizontal shared edge (top-bottom)
+      if (Math.abs(aB - b.y) <= tolerance || Math.abs(bB - a.y) <= tolerance) {
+        const edgeY = Math.abs(aB - b.y) <= tolerance ? (aB + b.y) / 2 : (bB + a.y) / 2;
+        const x0 = Math.max(a.x, b.x), x1 = Math.min(aR, bR);
+        if (x1 > x0) return { x: (x0 + x1) / 2, y: edgeY, x0, x1, y0: edgeY, y1: edgeY, axis: 'h' };
+      }
+      // Overlapping
+      const ox0 = Math.max(a.x, b.x), ox1 = Math.min(aR, bR);
+      const oy0 = Math.max(a.y, b.y), oy1 = Math.min(aB, bB);
+      if (ox1 > ox0 && oy1 > oy0) return { x: (ox0 + ox1) / 2, y: (oy0 + oy1) / 2, axis: 'o' };
+      return null;
+    }
+
+    // Check if any door/passage element from the block's elements sits on the shared edge between a and b
+    // This represents a physical opening (doorway) in a wall
+    function doorOnSharedEdge(a, b, blockEls, tolerance = 20) {
+      const edge = getSharedEdge(a, b);
+      if (!edge) return false;
+
+      for (const el of blockEls) {
+        if (!(['door', 'window'].includes((el.type || '').toLowerCase()))) continue;
+        const er = el.x + el.w, eb = el.y + el.h;
+
+        if (edge.axis === 'v') {
+          // Door must be near the edge X and overlap the shared Y range
+          const doorCx = el.x + el.w / 2;
+          if (Math.abs(doorCx - edge.x) <= tolerance) {
+            const dy0 = Math.max(el.y, edge.y0), dy1 = Math.min(eb, edge.y1);
+            if (dy1 > dy0) return true;
+          }
+        } else if (edge.axis === 'h') {
+          const doorCy = el.y + el.h / 2;
+          if (Math.abs(doorCy - edge.y) <= tolerance) {
+            const dx0 = Math.max(el.x, edge.x0), dx1 = Math.min(er, edge.x1);
+            if (dx1 > dx0) return true;
+          }
+        } else if (edge.axis === 'o') {
+          // Overlapping rooms — door near the center of overlap
+          if (Math.abs((el.x + el.w / 2) - edge.x) <= tolerance &&
+            Math.abs((el.y + el.h / 2) - edge.y) <= tolerance) return true;
+        }
+      }
+      return false;
+    }
+
+    // Check if a wall on the current floor blocks the shared boundary between two elements
+    function wallBlocksEdge(a, b, floorId) {
+      const edge = getSharedEdge(a, b);
+      if (!edge) return false;
+
+      const floorWalls = state.walls.filter(w => w.floorId === floorId);
+      if (floorWalls.length === 0) return false;
+
+      // For a horizontal edge: check if any wall crosses most of the shared x-segment
+      // For a vertical edge: check if any wall covers most of the shared y-segment
+      for (const wall of floorWalls) {
+        const wR = wall.x + wall.w, wB = wall.y + wall.h;
+
+        if (edge.axis === 'v') {
+          // Wall must overlap the edge x and span a significant part of the y overlap
+          if (wall.x <= edge.x + 8 && wR >= edge.x - 8) {
+            const wy0 = Math.max(wall.y, edge.y0), wy1 = Math.min(wB, edge.y1);
+            const overlapLen = wy1 - wy0;
+            const edgeLen = edge.y1 - edge.y0;
+            if (overlapLen > edgeLen * 0.4) return true;
+          }
+        } else if (edge.axis === 'h') {
+          if (wall.y <= edge.y + 8 && wB >= edge.y - 8) {
+            const wx0 = Math.max(wall.x, edge.x0), wx1 = Math.min(wR, edge.x1);
+            const overlapLen = wx1 - wx0;
+            const edgeLen = edge.x1 - edge.x0;
+            if (overlapLen > edgeLen * 0.4) return true;
+          }
+        } else if (edge.axis === 'o') {
+          // Overlapping rooms — check if wall is inside overlap region
+          if (wall.x < edge.x + 10 && wR > edge.x - 10 && wall.y < edge.y + 10 && wB > edge.y - 10) return true;
+        }
+      }
+      return false;
+    }
+
+    function buildGraph() {
+      // adjacency: Map<elId, [{neighborId, cost, type:'same'|'stair', meta}]>
+      const adj = new Map();
+      const allEls = allElements();
+
+      allEls.forEach(r => adj.set(r.el.id, []));
+
+      // Same-block adjacency: two elements connect if they physically touch or overlap.
+      // No passage-type requirement — any touching rooms are considered connected.
+      // Drawn walls can still block edges unless a door element sits on that edge.
+      state.floors.forEach(f => {
+        f.blocks.forEach(b => {
+          const els = b.elements;
+          for (let i = 0; i < els.length; i++) {
+            for (let j = i + 1; j < els.length; j++) {
+              const a = els[i], bEl = els[j];
+              if (!rectsOverlapOrTouch(a, bEl)) continue;
+
+              // If a drawn wall blocks the shared edge, only allow through if
+              // a door element is physically on that edge (door = opening in the wall).
+              const blocked = wallBlocksEdge(a, bEl, f.id);
+              if (blocked) {
+                const hasDoorOpening = doorOnSharedEdge(a, bEl, b.elements);
+                if (!hasDoorOpening) continue;
+              }
+
+              const d = dist(a, bEl);
+              adj.get(a.id).push({ neighborId: bEl.id, cost: d, type: 'same', meta: { floorId: f.id, floorName: f.name } });
+              adj.get(bEl.id).push({ neighborId: a.id, cost: d, type: 'same', meta: { floorId: f.id, floorName: f.name } });
+            }
+          }
+        });
+      });
+
+      // Cross-floor via stair links
+      const STAIR_COST = 120;
+      state.stairLinks.forEach(lk => {
+        if (adj.has(lk.fromElId) && adj.has(lk.toElId)) {
+          const fromFloor = state.floors.find(f => f.id === lk.fromFloorId);
+          const toFloor = state.floors.find(f => f.id === lk.toFloorId);
+          adj.get(lk.fromElId).push({
+            neighborId: lk.toElId, cost: STAIR_COST, type: 'stair',
+            meta: { fromFloorName: fromFloor?.name, toFloorName: toFloor?.name }
+          });
+          adj.get(lk.toElId).push({
+            neighborId: lk.fromElId, cost: STAIR_COST, type: 'stair',
+            meta: { fromFloorName: toFloor?.name, toFloorName: fromFloor?.name }
+          });
+        }
+      });
+
+      // Universal element links (cross-floor or same-floor)
+      const LINK_COST = 100;
+      state.universalLinks.forEach(lk => {
+        if (adj.has(lk.fromElId) && adj.has(lk.toElId)) {
+          const fromFloor = state.floors.find(f => f.id === lk.fromFloorId);
+          const toFloor = state.floors.find(f => f.id === lk.toFloorId);
+          const isCrossFloor = lk.fromFloorId !== lk.toFloorId;
+          adj.get(lk.fromElId).push({
+            neighborId: lk.toElId, cost: LINK_COST, type: isCrossFloor ? 'universal' : 'same',
+            meta: { fromFloorName: fromFloor?.name, toFloorName: toFloor?.name, floorId: lk.toFloorId, floorName: toFloor?.name, isUniversalLink: true }
+          });
+          adj.get(lk.toElId).push({
+            neighborId: lk.fromElId, cost: LINK_COST, type: isCrossFloor ? 'universal' : 'same',
+            meta: { fromFloorName: toFloor?.name, toFloorName: fromFloor?.name, floorId: lk.fromFloorId, floorName: fromFloor?.name, isUniversalLink: true }
+          });
+        }
+      });
+
+      return adj;
+    }
+
+    function dijkstra(adj, startId, endId) {
+      // Returns {path: [elId,...], cost, edges: [{from, to, type, meta}]}
+      const dist2 = new Map();
+      const prev = new Map();
+      const edgeMeta = new Map(); // toId -> edge info
+      const visited = new Set();
+      const pq = []; // [{cost, id}]
+
+      adj.forEach((_, id) => dist2.set(id, Infinity));
+      dist2.set(startId, 0);
+      pq.push({ cost: 0, id: startId });
+
+      while (pq.length) {
+        pq.sort((a, b) => a.cost - b.cost);
+        const { cost, id } = pq.shift();
+        if (visited.has(id)) continue;
+        visited.add(id);
+        if (id === endId) break;
+
+        const neighbors = adj.get(id) || [];
+        neighbors.forEach(({ neighborId, cost: edgeCost, type, meta }) => {
+          const newCost = cost + edgeCost;
+          if (newCost < dist2.get(neighborId)) {
+            dist2.set(neighborId, newCost);
+            prev.set(neighborId, id);
+            edgeMeta.set(neighborId, { type, meta });
+            pq.push({ cost: newCost, id: neighborId });
+          }
+        });
+      }
+
+      if (dist2.get(endId) === Infinity) return null; // No path
+
+      // Reconstruct
+      const path = [];
+      const edges = [];
+      let cur = endId;
+      while (cur !== undefined) {
+        path.unshift(cur);
+        const meta = edgeMeta.get(cur);
+        if (meta) edges.unshift({ to: cur, from: prev.get(cur), ...meta });
+        cur = prev.get(cur);
+      }
+      return { path, cost: dist2.get(endId), edges };
+    }
+
+    window.openPathFinder = function () {
+      clearPathHighlights();
+      const allEls = allElements();
+      const rooms = allEls.filter(r => !['door', 'window'].includes(r.el.type?.toLowerCase()) && !r.el.type?.startsWith('Corridor-') && r.el.type !== 'Corridor');
+
+      const fromSel = document.getElementById('pfFrom');
+      const toSel = document.getElementById('pfTo');
+      fromSel.innerHTML = '';
+      toSel.innerHTML = '';
+
+      rooms.forEach(r => {
+        const opt1 = document.createElement('option');
+        opt1.value = r.el.id;
+        opt1.textContent = elLabel(r);
+        fromSel.appendChild(opt1);
+
+        const opt2 = document.createElement('option');
+        opt2.value = r.el.id;
+        opt2.textContent = elLabel(r);
+        toSel.appendChild(opt2);
+      });
+
+      // Default: pick second room as "to"
+      if (toSel.options.length > 1) toSel.selectedIndex = 1;
+
+      clearPathResult();
+      document.getElementById('pathModal').classList.remove('hidden');
+    };
+
+    window.closePathModal = function () {
+      document.getElementById('pathModal').classList.add('hidden');
+    };
+
+    window.clearPathResult = function () {
+      document.getElementById('pathResult').innerHTML = '';
+    };
+
+    // Store current path state for floor switching
+    let _pathState = null;
+
+    window.clearPathHighlights = function () {
+      _pathState = null;
+      document.querySelectorAll('.element').forEach(el => {
+        el.classList.remove('path-highlight', 'path-start', 'path-end');
+        const badge = el.querySelector('.path-num');
+        if (badge) badge.remove();
+      });
+      // Clear SVG arrows
+      const svg = document.getElementById('pathArrowSvg');
+      if (svg) svg.innerHTML = '';
+      // Hide floor bar and clear button
+      const bar = document.getElementById('pathFloorBar');
+      if (bar) { bar.innerHTML = ''; bar.style.display = 'none'; }
+      const cb = document.getElementById('pathClearBtn');
+      if (cb) cb.style.display = 'none';
+    };
+
+    // Find the midpoint of the overlap segment between two touching rectangles
+    // Returns a point ON the shared wall — the actual doorway/passage location
+    function getSharedWallMidpoint(a, b) {
+      const edge = getSharedEdge(a, b, 10);
+      if (edge) return edge;
+
+      // Fallback: midpoint between centers
+      return {
+        x: (a.x + a.w / 2 + b.x + b.w / 2) / 2,
+        y: (a.y + a.h / 2 + b.y + b.h / 2) / 2,
+        axis: 'f'
+      };
+    }
+
+    function drawPathArrows(path, edges, activeFloorId, animateLines) {
+      const svg = document.getElementById('pathArrowSvg');
+      if (!svg) return;
+      svg.innerHTML = '';
+
+
+
+      const R = 14;
+
+      // --- Collect only the elements on this floor, in path order ---
+      const onFloor = path.filter(elId => {
+        const rec = getElById(elId);
+        return rec && rec.floorId === activeFloorId;
+      });
+      if (onFloor.length === 0) return;
+
+      // --- Find the cross-floor exit: last element on this floor that has a cross-floor edge ---
+      // exitElId = the element on THIS floor whose NEXT path element is on a different floor
+      let stairExitElId = null;
+      let nextFloorId = null;
+      let exitEdgeType = null; // 'stair' or 'universal'
+      for (let i = 0; i < path.length - 1; i++) {
+        const fromRec = getElById(path[i]);
+        const toRec = getElById(path[i + 1]);
+        const edge = edges.find(e => e.to === path[i + 1]);
+        if (fromRec && fromRec.floorId === activeFloorId &&
+          toRec && toRec.floorId !== activeFloorId &&
+          edge && (edge.type === 'stair' || edge.type === 'universal')) {
+          stairExitElId = path[i];
+          nextFloorId = toRec.floorId;
+          exitEdgeType = edge.type;
+          break;
+        }
+      }
+
+      // --- Build an ORTHOGONAL polyline through the path ---
+      // For each consecutive pair in onFloor, we compute gate point (shared edge midpoint).
+      // The line travels: roomCenter → (axis-aligned) → gate → (axis-aligned) → next roomCenter
+      // We use SVG polylines so corners are always 90°, never diagonal.
+
+      // Collect all points as a flat orthogonal polyline.
+      // Key principle: the path must stay INSIDE each element's bounding box.
+      // For each step A → B:
+      //   - Find the shared edge (gate) between A and B
+      //   - Compute the exit point on A's boundary (clamped to A's box)
+      //   - Compute the entry point on B's boundary (clamped to B's box)
+      //   - Route: A_center → exit_A → (gate) → entry_B → B_center
+      //     using only axis-aligned (orthogonal) segments that stay inside A then inside B
+      function buildPolyline() {
+        const pts = [];
+
+        // Clamp a point to be inside a rect's boundary (on the edge if outside)
+        function clampToRect(px, py, el) {
+          return {
+            x: Math.max(el.x, Math.min(el.x + el.w, px)),
+            y: Math.max(el.y, Math.min(el.y + el.h, py))
+          };
+        }
+
+        // Given element el and a gate point, find the exit point on el's boundary
+        // that is closest to the gate, staying on the correct edge
+        function exitPoint(el, gate) {
+          const cx = el.x + el.w / 2, cy = el.y + el.h / 2;
+          if (gate.axis === 'v') {
+            // Gate is on left or right wall of el
+            const ex = (gate.x <= cx) ? el.x : el.x + el.w;
+            const ey = Math.max(el.y, Math.min(el.y + el.h, gate.y));
+            return { x: ex, y: ey };
+          } else if (gate.axis === 'h') {
+            // Gate is on top or bottom wall of el
+            const ey = (gate.y <= cy) ? el.y : el.y + el.h;
+            const ex = Math.max(el.x, Math.min(el.x + el.w, gate.x));
+            return { x: ex, y: ey };
+          } else {
+            // Overlapping — use center
+            return { x: cx, y: cy };
+          }
+        }
+
+        for (let i = 0; i < onFloor.length; i++) {
+          const rec = getElById(onFloor[i]);
+          if (!rec) continue;
+          const el = rec.el;
+          const cx = el.x + el.w / 2, cy = el.y + el.h / 2;
+
+          if (i === 0) {
+            pts.push({ x: cx, y: cy, elId: onFloor[i], isGate: false });
+          }
+
+          if (i < onFloor.length - 1) {
+            const nextRec = getElById(onFloor[i + 1]);
+            if (!nextRec) continue;
+            const nel = nextRec.el;
+            const ncx = nel.x + nel.w / 2, ncy = nel.y + nel.h / 2;
+
+            const gate = getSharedWallMidpoint(el, nel);
+
+            if (gate.axis === 'o') {
+              // Overlapping rooms — go horizontal then vertical, staying inside overlap
+              pts.push({ x: ncx, y: cy, isGate: true });
+            } else if (gate.axis === 'f') {
+              // No shared wall — rooms are non-adjacent. Draw a clean L-shaped route
+              // between centers: horizontal first, then vertical
+              if (Math.abs(ncx - cx) > 1) pts.push({ x: ncx, y: cy, isGate: true });
+            } else {
+              // Get the exact exit from current element and entry into next element
+              const exitA = exitPoint(el, gate);
+              const entryB = exitPoint(nel, gate);
+
+              // Route from current center to exitA (orthogonal, inside el)
+              // We go to the exit edge first: if vertical gate, move Y first then X;
+              // if horizontal gate, move X first then Y — so we stay inside el
+              if (gate.axis === 'v') {
+                // Exit through left or right wall — move Y first (stay in el), then X to wall
+                if (Math.abs(cy - exitA.y) > 1) pts.push({ x: cx, y: exitA.y, isGate: true });
+                pts.push({ x: exitA.x, y: exitA.y, isGate: true });
+              } else {
+                // Exit through top or bottom wall — move X first (stay in el), then Y to wall
+                if (Math.abs(cx - exitA.x) > 1) pts.push({ x: exitA.x, y: cy, isGate: true });
+                pts.push({ x: exitA.x, y: exitA.y, isGate: true });
+              }
+
+              // Gate crossing point
+              pts.push({ x: gate.x, y: gate.y, isGate: true });
+
+              // Route from entryB to next center (orthogonal, inside nel)
+              if (gate.axis === 'v') {
+                // Enter through left or right wall — move Y to match center, then X to center
+                if (Math.abs(entryB.y - ncy) > 1) pts.push({ x: entryB.x, y: ncy, isGate: true });
+                // (horizontal segment to ncx is implicit — entryB.x to ncx at ncy)
+              } else {
+                // Enter through top or bottom wall — move X to match center, then Y to center
+                if (Math.abs(entryB.x - ncx) > 1) pts.push({ x: ncx, y: entryB.y, isGate: true });
+                // (vertical segment to ncy is implicit — entryB.y to ncy at ncx)
+              }
+            }
+
+            pts.push({ x: ncx, y: ncy, elId: onFloor[i + 1], isGate: false });
+          }
+        }
+
+        // Deduplicate adjacent near-identical points
+        const out = [pts[0]];
+        for (let i = 1; i < pts.length; i++) {
+          const p = pts[i], prev = out[out.length - 1];
+          if (Math.abs(p.x - prev.x) > 0.5 || Math.abs(p.y - prev.y) > 0.5) out.push(p);
+        }
+        return out;
+      }
+
+      const polyPts = buildPolyline();
+
+      // Split polyline into segments: each segment is from one node to next, passing through gates
+      // We need per-segment info for: arrowhead at node, stairSeg coloring, animation
+      const segments = [];
+      let segStart = 0;
+      for (let i = 1; i < polyPts.length; i++) {
+        if (!polyPts[i].isGate) {
+          // This is a node point — build a segment from segStart..i
+          const segPts = polyPts.slice(segStart, i + 1);
+          const srcElId = polyPts[segStart].elId;
+          const destElId = polyPts[i].elId;
+          const isStairSeg = !!(destElId && destElId === stairExitElId && exitEdgeType === 'stair');
+          const isUniversalSeg = !!(destElId && destElId === stairExitElId && exitEdgeType === 'universal');
+
+          // Only offset at the very first and very last node of the entire path
+          // (where start/end marker circles actually exist).
+          // Intermediate nodes have no circles → no offset → no gap.
+          const srcIsGlobalFirst = (srcElId === path[0]);
+          const destIsGlobalLast = (destElId === path[path.length - 1]);
+
+          // Build sub-segments within this segment
+          const subSegs = [];
+          for (let k = 0; k < segPts.length - 1; k++) {
+            let x1 = segPts[k].x, y1 = segPts[k].y;
+            let x2 = segPts[k + 1].x, y2 = segPts[k + 1].y;
+            const dx = x2 - x1, dy = y2 - y1;
+            const len = Math.sqrt(dx * dx + dy * dy) || 1;
+            const ux = dx / len, uy = dy / len;
+            // Only offset from source circle if this is the first sub-segment AND src is the global start
+            if (k === 0 && !segPts[k].isGate && srcIsGlobalFirst) { x1 += ux * R; y1 += uy * R; }
+            // Only offset into destination circle if this is the last sub-segment AND dest is the global end
+            const isLast = k === segPts.length - 2;
+            if (isLast && !segPts[k + 1].isGate && destIsGlobalLast) { x2 -= ux * (R + 2); y2 -= uy * (R + 2); }
+            const segLen = Math.sqrt((x2 - x1) ** 2 + (y2 - y1) ** 2);
+            if (segLen > 0.5) subSegs.push({ x1, y1, x2, y2, segLen });
+          }
+
+          segments.push({
+            subSegs, destElId, isStairSeg, isUniversalSeg,
+            totalLen: subSegs.reduce((s, ss) => s + ss.segLen, 0)
+          });
+          segStart = i;
+        }
+      }
+
+      // --- Draw only start/end markers (no numbered mid-node circles) ---
+      const nodeGs = []; // { g, elId, pathIdx }
+      onFloor.forEach(elId => {
+        const rec = getElById(elId);
+        if (!rec) return;
+        const pathIdx = path.indexOf(elId);
+        const isFirst = (pathIdx === 0);
+        const isLast = (pathIdx === path.length - 1);
+        // Skip intermediate nodes — no circles, no numbers
+        if (!isFirst && !isLast) {
+          nodeGs.push({ g: null, elId, pathIdx });
+          return;
+        }
+        const cx = rec.el.x + rec.el.w / 2, cy = rec.el.y + rec.el.h / 2;
+        const g = document.createElementNS('http://www.w3.org/2000/svg', 'g');
+        if (animateLines) g.style.opacity = '0';
+        const circle = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+        circle.setAttribute('cx', cx); circle.setAttribute('cy', cy); circle.setAttribute('r', R);
+        circle.className.baseVal = 'path-node-circle ' + (isFirst ? 'start-circle' : 'end-circle');
+        g.appendChild(circle);
+        if (isFirst) {
+          // Person/human icon
+          const iconG = document.createElementNS('http://www.w3.org/2000/svg', 'g');
+          iconG.setAttribute('transform', `translate(${cx - 7}, ${cy - 9}) scale(0.875)`);
+          iconG.setAttribute('fill', '#27ae60');
+          const head = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+          head.setAttribute('cx', '8'); head.setAttribute('cy', '4'); head.setAttribute('r', '3.5');
+          iconG.appendChild(head);
+          const body = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+          body.setAttribute('d', 'M3,20 C3,13 13,13 13,20');
+          iconG.appendChild(body);
+          g.appendChild(iconG);
+        } else {
+          // Pin/destination icon
+          const iconG = document.createElementNS('http://www.w3.org/2000/svg', 'g');
+          iconG.setAttribute('transform', `translate(${cx - 6}, ${cy - 10}) scale(0.75)`);
+          iconG.setAttribute('fill', '#e74c3c');
+          const pin = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+          pin.setAttribute('d', 'M8,0 C4.7,0 2,2.7 2,6 C2,10.5 8,16 8,16 C8,16 14,10.5 14,6 C14,2.7 11.3,0 8,0 Z');
+          iconG.appendChild(pin);
+          const dot = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+          dot.setAttribute('cx', '8'); dot.setAttribute('cy', '6'); dot.setAttribute('r', '2.2');
+          dot.setAttribute('fill', '#fff');
+          iconG.appendChild(dot);
+          g.appendChild(iconG);
+        }
+        svg.appendChild(g);
+        nodeGs.push({ g, elId, pathIdx });
+      });
+
+      // --- Stair exit label (shown when animation reaches stair node) ---
+      let stairLabelEl = null;
+      if (stairExitElId) {
+        const exitRec = getElById(stairExitElId);
+        const toFloor = state.floors.find(f => f.id === nextFloorId);
+        if (exitRec) {
+          const cx = exitRec.el.x + exitRec.el.w / 2;
+          const cy = exitRec.el.y + exitRec.el.h / 2;
+          const lbl = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+          lbl.setAttribute('x', cx); lbl.setAttribute('y', cy + 28);
+          lbl.className.baseVal = 'path-floor-badge';
+          const exitIcon = exitEdgeType === 'universal' ? '\ud83d\udd17' : '\ud83e\ude9c';
+          lbl.textContent = exitIcon + ' \u2192 ' + (toFloor?.name || 'Next Floor');
+          if (animateLines) lbl.style.opacity = '0';
+          svg.appendChild(lbl);
+          stairLabelEl = lbl;
+        }
+      }
+
+      // --- Static draw (floor-bar manual switch) ---
+      if (!animateLines) {
+        segments.forEach(({ subSegs, isStairSeg, isUniversalSeg, destElId }) => {
+          subSegs.forEach((ss, idx) => {
+            const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+            line.setAttribute('x1', ss.x1); line.setAttribute('y1', ss.y1);
+            line.setAttribute('x2', ss.x2); line.setAttribute('y2', ss.y2);
+            const lineClass = isStairSeg ? ' stair-line' : isUniversalSeg ? ' universal-line' : '';
+            line.className.baseVal = 'path-arrow-line' + lineClass;
+
+            svg.appendChild(line);
+          });
+        });
+        nodeGs.forEach(({ g }) => { if (g) g.style.opacity = '1'; });
+        if (stairLabelEl) stairLabelEl.style.opacity = '1';
+        return;
+      }
+
+      // --- Animated draw ---
+      // Show the start node immediately
+      const firstNodeG = nodeGs.find(n => n.elId === onFloor[0]);
+      if (firstNodeG && firstNodeG.g) firstNodeG.g.style.opacity = '1';
+
+      const SPEED_PX_PER_MS = 0.35;
+      let segIdx = 0;
+
+      function animateSegment() {
+        if (segIdx >= segments.length) {
+          nodeGs.forEach(({ g }) => { if (g) g.style.opacity = '1'; });
+          if (stairLabelEl) stairLabelEl.style.opacity = '1';
+          return;
+        }
+
+        const seg = segments[segIdx];
+        let subIdx = 0;
+
+        function animateSubSeg() {
+          if (subIdx >= seg.subSegs.length) {
+            // All sub-segments drawn — reveal destination node
+            if (seg.destElId) {
+              const nodeG = nodeGs.find(n => n.elId === seg.destElId);
+              if (nodeG && nodeG.g) nodeG.g.style.opacity = '1';
+            }
+            segIdx++;
+
+            // If we just finished drawing INTO the cross-floor exit node → trigger floor switch
+            if ((seg.isStairSeg || seg.isUniversalSeg) && nextFloorId !== null) {
+              if (stairLabelEl) stairLabelEl.style.opacity = '1';
+              setTimeout(() => {
+                const nextFloor = state.floors.find(f => f.id === nextFloorId);
+                const canvasEl = document.getElementById('canvas');
+                canvasEl.style.transition = 'opacity 0.3s';
+                canvasEl.style.opacity = '0';
+                setTimeout(() => {
+                  state.currFloorId = nextFloorId;
+                  state.currBlockId = nextFloor?.blocks[0]?.id || state.currBlockId;
+                  state.selectedId = null;
+                  renderAll();
+                  setTimeout(() => {
+                    canvasEl.style.opacity = '1';
+                    drawPathArrows(_pathState.path, _pathState.edges, nextFloorId, true);
+                    applyPathHighlights(_pathState.path, nextFloorId);
+                    buildFloorBar(_pathState.path, _pathState.edges, nextFloorId);
+                  }, 60);
+                }, 300);
+              }, 600);
+              return;
+            }
+
+            animateSegment();
+            return;
+          }
+
+          const ss = seg.subSegs[subIdx];
+          const duration = ss.segLen / SPEED_PX_PER_MS;
+
+          const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+          line.setAttribute('x1', ss.x1); line.setAttribute('y1', ss.y1);
+          line.setAttribute('x2', ss.x2); line.setAttribute('y2', ss.y2);
+          const lineClass = seg.isStairSeg ? ' stair-line' : seg.isUniversalSeg ? ' universal-line' : '';
+          line.className.baseVal = 'path-arrow-line' + lineClass;
+          line.style.strokeDasharray = `${ss.segLen} ${ss.segLen}`;
+          line.style.strokeDashoffset = `${ss.segLen}`;
+          line.style.animation = 'none';
+          svg.appendChild(line);
+
+          const start = performance.now();
+          function step(now) {
+            const progress = Math.min((now - start) / duration, 1);
+            line.style.strokeDashoffset = ss.segLen * (1 - progress);
+            if (progress < 1) { requestAnimationFrame(step); return; }
+
+            // Sub-segment fully drawn — restore flowing dash animation
+            line.style.strokeDasharray = '';
+            line.style.strokeDashoffset = '';
+            line.style.animation = '';
+
+            subIdx++;
+            animateSubSeg();
+          }
+          requestAnimationFrame(step);
+        }
+
+        animateSubSeg();
+      }
+
+      animateSegment();
+    }
+
+    function buildFloorBar(path, edges, activeFloorId) {
+      const bar = document.getElementById('pathFloorBar');
+      if (!bar) return;
+      // Get unique floors in path order
+      const floorsSeen = [];
+      const floorSet = new Set();
+      path.forEach(elId => {
+        const rec = getElById(elId);
+        if (rec && !floorSet.has(rec.floorId)) {
+          floorSet.add(rec.floorId);
+          const floor = state.floors.find(f => f.id === rec.floorId);
+          floorsSeen.push({ id: rec.floorId, name: floor?.name || 'Floor' });
+        }
+      });
+
+      if (floorsSeen.length <= 1) { bar.style.display = 'none'; return; }
+
+      bar.innerHTML = '<span style="color:#555;font-weight:600;margin-right:4px;">🗺️ Floor:</span>';
+      floorsSeen.forEach(f => {
+        const btn = document.createElement('button');
+        btn.textContent = f.name;
+        if (f.id === activeFloorId) btn.classList.add('active');
+        btn.onclick = () => {
+          if (!_pathState) return;
+          const floor = state.floors.find(fl => fl.id === f.id);
+          state.currFloorId = f.id;
+          state.currBlockId = floor?.blocks[0]?.id || state.currBlockId;
+          state.selectedId = null;
+          renderAll();
+          setTimeout(() => {
+            drawPathArrows(_pathState.path, _pathState.edges, f.id, false);
+            applyPathHighlights(_pathState.path, f.id);
+            buildFloorBar(_pathState.path, _pathState.edges, f.id);
+          }, 60);
+        };
+        bar.appendChild(btn);
+      });
+      bar.style.display = 'flex';
+    }
+
+    function applyPathHighlights(path, floorId) {
+      document.querySelectorAll('.element').forEach(el => {
+        el.classList.remove('path-highlight', 'path-start', 'path-end');
+        const badge = el.querySelector('.path-num');
+        if (badge) badge.remove();
+      });
+      path.forEach((elId, idx) => {
+        const rec = getElById(elId);
+        if (!rec || rec.floorId !== floorId) return;
+        const domEl = document.getElementById('el-' + elId);
+        if (!domEl) return;
+        if (idx === 0) domEl.classList.add('path-start');
+        else if (idx === path.length - 1) domEl.classList.add('path-end');
+        else domEl.classList.add('path-highlight');
+      });
+    }
+
+    window.runPathFinder = function () {
+      clearPathHighlights();
+      const fromId = parseInt(document.getElementById('pfFrom').value);
+      const toId = parseInt(document.getElementById('pfTo').value);
+
+      if (fromId === toId) {
+        document.getElementById('pathResult').innerHTML = '<div class="path-empty">Start and end are the same room!</div>';
+        return;
+      }
+
+      const adj = buildGraph();
+      const result = dijkstra(adj, fromId, toId);
+      const resultDiv = document.getElementById('pathResult');
+
+      if (!result) {
+        const fromRec = getElById(fromId);
+        const toRec = getElById(toId);
+        const sameFloor = fromRec && toRec && fromRec.floorId === toRec.floorId;
+
+        let reason = '';
+        let fix = '';
+
+        if (!sameFloor) {
+          // Cross-floor: check if either floor has any stair/universal links
+          const fromFloorHasLinks = state.stairLinks.some(lk => lk.fromFloorId === fromRec?.floorId || lk.toFloorId === fromRec?.floorId)
+            || state.universalLinks.some(lk => lk.fromFloorId === fromRec?.floorId || lk.toFloorId === fromRec?.floorId);
+          const toFloorHasLinks = state.stairLinks.some(lk => lk.fromFloorId === toRec?.floorId || lk.toFloorId === toRec?.floorId)
+            || state.universalLinks.some(lk => lk.fromFloorId === toRec?.floorId || lk.toFloorId === toRec?.floorId);
+          const totalLinks = state.stairLinks.length + state.universalLinks.length;
+
+          if (totalLinks === 0) {
+            reason = 'No connections exist between any floors.';
+            fix = 'Select any element on the canvas → click <b>🔗 Link to Any Element</b> in the Properties panel to connect elements across floors. You can also use Staircase/Elevator linking.';
+          } else if (!fromFloorHasLinks) {
+            reason = `<b>${fromRec?.floorName}</b> has no cross-floor links.`;
+            fix = `Go to <b>${fromRec?.floorName}</b>, select any element → click <b>🔗 Link to Any Element</b> to connect it to an element on another floor.`;
+          } else if (!toFloorHasLinks) {
+            reason = `<b>${toRec?.floorName}</b> has no cross-floor links.`;
+            fix = `Go to <b>${toRec?.floorName}</b>, select any element → click <b>🔗 Link to Any Element</b> to connect it to an element on another floor.`;
+          } else {
+            reason = 'The linked elements on each floor are not connected to the rooms in the path.';
+            fix = 'Make sure the linked elements are touching (overlapping) corridors or rooms on their floor, forming a connected chain.';
+          }
+        } else {
+          reason = 'The rooms are on the same floor but no connected path exists between them.';
+          fix = 'Paths travel through <b>Corridors</b>, <b>Doors</b>, <b>Elevators</b>, <b>Staircases</b>, and <b>Element Links</b>. Make sure each room touches a Corridor or has a Door element on its shared wall, or use <b>🔗 Link to Any Element</b> to directly connect them.';
+        }
+
+        resultDiv.innerHTML = `<div style="background:#fff5f5;border:1px solid #fca5a5;border-radius:8px;padding:12px;font-size:13px;line-height:1.6;">
+      <div style="font-weight:700;color:#dc2626;margin-bottom:6px;">❌ No path found</div>
+      <div style="color:#7f1d1d;margin-bottom:8px;">${reason}</div>
+      <div style="background:#fef2f2;border-radius:6px;padding:8px;color:#991b1b;">
+        <b>How to fix:</b><br>${fix}
+      </div>
+    </div>`;
+        return;
+      }
+
+      const { path, edges } = result;
+      const numFloors = new Set(path.map(id => getElById(id)?.floorId)).size;
+
+      // Show compact summary in modal
+      resultDiv.innerHTML = `<div class="path-summary" style="margin-bottom:8px;">
+    ✅ Path found — <strong>${path.length} spaces</strong> across <strong>${numFloors} floor(s)</strong>
+    ${numFloors > 1 ? '<br><span style="font-size:12px;color:#8e44ad;">Use the floor switcher on the map to see each floor.</span>' : ''}
+  </div>`;
+
+      // Save path state
+      _pathState = { path, edges };
+
+      // Switch canvas to start floor
+      const startRec = getElById(fromId);
+      if (startRec) {
+        state.currFloorId = startRec.floorId;
+        state.currBlockId = startRec.blockId;
+        state.selectedId = null;
+        renderAll();
+      }
+
+      // Close modal and draw arrows on canvas
+      document.getElementById('pathModal').classList.add('hidden');
+
+      setTimeout(() => {
+        const activeFloor = startRec ? startRec.floorId : state.currFloorId;
+        drawPathArrows(path, edges, activeFloor, true);
+        applyPathHighlights(path, activeFloor);
+        buildFloorBar(path, edges, activeFloor);
+        const cb = document.getElementById('pathClearBtn');
+        if (cb) cb.style.display = 'block';
+        showToast(`Path found: ${path.length} steps — animating on map`);
+      }, 60);
+    };
+
+    /* =================================================================
+       DRAG & RESIZE (GPU optimized)
+    ================================================================= */
+    function startDrag(e, el) {
+      if (e.target.classList.contains('resize')) return;
+      e.preventDefault();
+      state.selectedId = el.id;
+      document.querySelectorAll('.element').forEach(d => d.classList.remove('selected'));
+      const div = e.currentTarget;
+      div.classList.add('selected');
+      updatePropsPanel();
+
+      const startX = e.clientX, startY = e.clientY;
+      const origX = el.x, origY = el.y;
+      const rot = el.r || 0;
+      div.classList.add('dragging');
+      let rAF = null;
+
+      const onMove = evt => {
+        if (rAF) return;
+        rAF = requestAnimationFrame(() => {
+          let nx = origX + (evt.clientX - startX) / state.zoom;
+          let ny = origY + (evt.clientY - startY) / state.zoom;
+          if (document.getElementById('snapToggle').checked) {
+            nx = Math.round(nx / state.gridSize) * state.gridSize;
+            ny = Math.round(ny / state.gridSize) * state.gridSize;
+          }
+          div.style.transform = `translate3d(${nx - origX}px,${ny - origY}px,0) rotate(${rot}deg)`;
+          const px = document.getElementById('px'); const py = document.getElementById('py');
+          if (px) { px.value = Math.round(nx); py.value = Math.round(ny); }
+          rAF = null;
+        });
+      };
+
+      const onUp = evt => {
+        if (rAF) cancelAnimationFrame(rAF);
+        div.classList.remove('dragging');
+        window.removeEventListener('mousemove', onMove);
+        window.removeEventListener('mouseup', onUp);
+        let fx = origX + (evt.clientX - startX) / state.zoom;
+        let fy = origY + (evt.clientY - startY) / state.zoom;
+        if (document.getElementById('snapToggle').checked) {
+          fx = Math.round(fx / state.gridSize) * state.gridSize;
+          fy = Math.round(fy / state.gridSize) * state.gridSize;
+        }
+        el.x = fx; el.y = fy;
+        div.style.transform = `rotate(${rot}deg)`;
+        div.style.left = el.x + 'px'; div.style.top = el.y + 'px';
+        if (el.x !== origX || el.y !== origY) { pushHistory(); autoExpandCanvas(); }
+      };
+
+      window.addEventListener('mousemove', onMove);
+      window.addEventListener('mouseup', onUp);
+    }
+
+    function startResize(e, el, dir) {
+      e.stopPropagation(); e.preventDefault();
+      const startX = e.clientX, startY = e.clientY;
+      const origX = el.x, origY = el.y, origW = el.w, origH = el.h;
+      const div = document.getElementById('el-' + el.id);
+      div.classList.add('resizing');
+      const dimTag = document.getElementById('dims-' + el.id);
+
+      const onMove = evt => {
+        const dx = (evt.clientX - startX) / state.zoom;
+        const dy = (evt.clientY - startY) / state.zoom;
+
+        // Horizontal
+        if (dir.includes('e')) {
+          el.w = Math.max(20, snap(origW + dx));
+        }
+        if (dir.includes('w')) {
+          const newW = Math.max(20, snap(origW - dx));
+          el.x = origX + (origW - newW);
+          el.w = newW;
+        }
+        // Vertical
+        if (dir.includes('s')) {
+          el.h = Math.max(20, snap(origH + dy));
+        }
+        if (dir.includes('n')) {
+          const newH = Math.max(20, snap(origH - dy));
+          el.y = origY + (origH - newH);
+          el.h = newH;
+        }
+
+        div.style.left = el.x + 'px'; div.style.top = el.y + 'px';
+        div.style.width = el.w + 'px'; div.style.height = el.h + 'px';
+        // Live-update shaped corridor SVG during resize
+        if (el.type === 'Corridor-Triangle' || el.type === 'Corridor-Circle' || el.type === 'Corridor-Cross') {
+          const oldSvg = div.querySelector('svg');
+          if (oldSvg) oldSvg.remove();
+          const newSvg = buildCorridorSvg(el);
+          div.insertBefore(newSvg, div.firstChild);
+        }
+        if (dimTag) dimTag.textContent = `${Math.round(el.w)} × ${Math.round(el.h)}`;
+        const pw = document.getElementById('pwidth'), ph = document.getElementById('pheight');
+        const px = document.getElementById('px'), py = document.getElementById('py');
+        if (pw) { pw.value = Math.round(el.w); ph.value = Math.round(el.h); }
+        if (px) { px.value = Math.round(el.x); py.value = Math.round(el.y); }
+      };
+
+      const onUp = () => {
+        div.classList.remove('resizing');
+        window.removeEventListener('mousemove', onMove);
+        window.removeEventListener('mouseup', onUp);
+        if (el.w !== origW || el.h !== origH || el.x !== origX || el.y !== origY) {
+          pushHistory(); autoExpandCanvas();
+        }
+      };
+
+      window.addEventListener('mousemove', onMove);
+      window.addEventListener('mouseup', onUp);
+    }
+
+    /* =================================================================
+       ZOOM
+    ================================================================= */
+    function applyCanvasTransform() {
+      canvasWrap.style.transform = `translate(${state.panX}px, ${state.panY}px) scale(${state.zoom})`;
+    }
+
+    /* Canvas resize */
+    window.resizeCanvas = function () {
+      const w = Math.max(800, parseInt(document.getElementById('canvasW').value) || 3000);
+      const h = Math.max(600, parseInt(document.getElementById('canvasH').value) || 2400);
+      canvas.style.width = w + 'px';
+      canvas.style.height = h + 'px';
+    };
+
+    /* Auto-expand canvas when elements are dragged near edges */
+    function autoExpandCanvas() {
+      let maxX = 0, maxY = 0;
+      const block = curBlock();
+      block.elements.forEach(el => {
+        maxX = Math.max(maxX, el.x + el.w + 100);
+        maxY = Math.max(maxY, el.y + el.h + 100);
+      });
+      const curW = parseInt(canvas.style.width) || 3000;
+      const curH = parseInt(canvas.style.height) || 2400;
+      if (maxX > curW || maxY > curH) {
+        const newW = Math.max(curW, Math.ceil(maxX / 200) * 200);
+        const newH = Math.max(curH, Math.ceil(maxY / 200) * 200);
+        canvas.style.width = newW + 'px';
+        canvas.style.height = newH + 'px';
+        document.getElementById('canvasW').value = newW;
+        document.getElementById('canvasH').value = newH;
+      }
+    }
+
+    window.updateZoom = function () {
+      const sl = document.getElementById('zoomSlider');
+      state.zoom = parseFloat(sl.value);
+      document.getElementById('zoomVal').textContent = Math.round(state.zoom * 100) + '%';
+      applyCanvasTransform();
+    };
+
+    /* ---- Canvas panning: left-click drag on empty canvas, middle-mouse anywhere, scroll to zoom ---- */
+    (function () {
+      const container = document.getElementById('canvasContainer');
+      let isPanning = false, panStartX = 0, panStartY = 0, panOrigX = 0, panOrigY = 0;
+
+      function isCanvasBg(target) {
+        // True when the click lands on empty canvas background (not a room/wall/button)
+        return target === canvas ||
+          target === canvasWrap ||
+          target === container ||
+          target.id === 'wallDrawPreview' ||
+          target.id === 'pathArrowSvg';
+      }
+
+      function startPan(e) {
+        isPanning = true;
+        window._lastPanMoved = false;
+        panStartX = e.clientX;
+        panStartY = e.clientY;
+        panOrigX = state.panX;
+        panOrigY = state.panY;
+        container.style.cursor = 'grabbing';
+        e.preventDefault();
+        e.stopPropagation();
+      }
+
+      function stopPan() {
+        if (!isPanning) return;
+        isPanning = false;
+        container.style.cursor = '';
+      }
+
+      // Track whether mouse moved during mousedown so click handler can ignore pan-drags
+      window._lastPanMoved = false;
+
+      // Left-click on empty canvas background → pan
+      // Middle-click anywhere → pan
+      container.addEventListener('mousedown', function (e) {
+        if (e.button === 1) {
+          // Middle mouse — always pan
+          startPan(e);
+        } else if (e.button === 0 && isCanvasBg(e.target) && !_wallToolActive) {
+          // Left click on empty background — pan (not on a room/wall element)
+          startPan(e);
+        }
+      }, true); // capture phase so it fires before element handlers
+
+      window.addEventListener('mousemove', function (e) {
+        if (!isPanning) return;
+        const dx = e.clientX - panStartX, dy = e.clientY - panStartY;
+        if (Math.abs(dx) > 3 || Math.abs(dy) > 3) window._lastPanMoved = true;
+        state.panX = panOrigX + dx;
+        state.panY = panOrigY + dy;
+        applyCanvasTransform();
+      });
+
+      window.addEventListener('mouseup', function () {
+        stopPan();
+      });
+
+      // Prevent context menu on middle click
+      container.addEventListener('contextmenu', function (e) {
+        if (e.button === 1) e.preventDefault();
+      });
+
+      // Mouse wheel → zoom centred on cursor
+      container.addEventListener('wheel', function (e) {
+        e.preventDefault();
+        const rect = container.getBoundingClientRect();
+        const mx = e.clientX - rect.left;
+        const my = e.clientY - rect.top;
+        const oldZoom = state.zoom;
+        const factor = e.deltaY < 0 ? 1.1 : 0.9;
+        const newZoom = Math.min(3, Math.max(0.15, oldZoom * factor));
+        state.panX = mx - (mx - state.panX) * (newZoom / oldZoom);
+        state.panY = my - (my - state.panY) * (newZoom / oldZoom);
+        state.zoom = newZoom;
+        const sl = document.getElementById('zoomSlider');
+        if (sl) { sl.value = state.zoom; }
+        document.getElementById('zoomVal').textContent = Math.round(state.zoom * 100) + '%';
+        applyCanvasTransform();
+      }, { passive: false });
+    })();
+
+    /* =================================================================
+       PROPERTY LISTENERS
+    ================================================================= */
+    document.getElementById('pname').oninput = function () { const el = getSelected(); if (el) { el.name = this.value; renderCanvas(); } };
+    document.getElementById('pwidth').onchange = function () { pushHistory(); const el = getSelected(); if (el) { el.w = parseInt(this.value); renderCanvas(); } };
+    document.getElementById('pheight').onchange = function () { pushHistory(); const el = getSelected(); if (el) { el.h = parseInt(this.value); renderCanvas(); } };
+    document.getElementById('px').onchange = function () { pushHistory(); const el = getSelected(); if (el) { el.x = parseInt(this.value); renderCanvas(); } };
+    document.getElementById('py').onchange = function () { pushHistory(); const el = getSelected(); if (el) { el.y = parseInt(this.value); renderCanvas(); } };
+    document.getElementById('prot').oninput = function () { const el = getSelected(); if (el) { el.r = parseInt(this.value); renderCanvas(); } };
+    document.getElementById('prot').onchange = function () { pushHistory(); };
+    document.getElementById('pcolor').onchange = function () { pushHistory(); const el = getSelected(); if (el) { el.color = this.value; renderCanvas(); } };
+    document.getElementById('pisStairs').onchange = function () { pushHistory(); const el = getSelected(); if (el) { el.isStairs = this.checked; renderCanvas(); } };
+
+    canvas.addEventListener('click', function (e) {
+      // Only deselect if this was a true click (not end of a pan drag)
+      if (_lastPanMoved) return;
+      if (e.target === canvas || e.target.id === 'wallDrawPreview' || e.target === canvasWrap) {
+        state.selectedId = null;
+        state.selectedWallId = null;
+        renderAll();
+      }
+    });
+
+    /* =================================================================
+       WALL TOOL
+    ================================================================= */
+    let _wallToolActive = false;
+
+    window.toggleWallTool = function () {
+      _wallToolActive = !_wallToolActive;
+      const btn = document.getElementById('wallToolBtn');
+      const hint = document.getElementById('wallHint');
+      if (_wallToolActive) {
+        btn.classList.add('active');
+        btn.textContent = '🧱 Drawing Wall…';
+        hint.style.display = 'block';
+        canvas.style.cursor = 'crosshair';
+      } else {
+        btn.classList.remove('active');
+        btn.textContent = '🧱 Draw Wall';
+        hint.style.display = 'none';
+        canvas.style.cursor = '';
+      }
+    };
+
+    window.deleteSelectedWall = function () {
+      if (!state.selectedWallId) { showToast('Select a wall first'); return; }
+      pushHistory();
+      state.walls = state.walls.filter(w => w.id !== state.selectedWallId);
+      state.selectedWallId = null;
+      renderAll();
+    };
+
+    // Wall draw: mousedown on canvas when wall tool active
+    canvas.addEventListener('mousedown', function (e) {
+      if (!_wallToolActive) return;
+      if (e.target !== canvas && e.target.id !== 'wallDrawPreview') return;
+      e.preventDefault();
+      e.stopPropagation();
+
+      const rect = canvas.getBoundingClientRect();
+      let sx = (e.clientX - rect.left) / state.zoom;
+      let sy = (e.clientY - rect.top) / state.zoom;
+      if (document.getElementById('snapToggle').checked) {
+        sx = Math.round(sx / state.gridSize) * state.gridSize;
+        sy = Math.round(sy / state.gridSize) * state.gridSize;
+      }
+
+      const WALL_THICKNESS = 8; // fixed architectural thickness
+      const preview = document.getElementById('wallDrawPreview');
+      preview.style.display = 'block';
+      preview.style.left = sx + 'px';
+      preview.style.top = (sy - WALL_THICKNESS / 2) + 'px';
+      preview.style.width = '0px';
+      preview.style.height = WALL_THICKNESS + 'px';
+      preview._wall = null;
+
+      const onMove = ev => {
+        let ex = (ev.clientX - rect.left) / state.zoom;
+        let ey = (ev.clientY - rect.top) / state.zoom;
+        if (document.getElementById('snapToggle').checked) {
+          ex = Math.round(ex / state.gridSize) * state.gridSize;
+          ey = Math.round(ey / state.gridSize) * state.gridSize;
+        }
+        const dx = ex - sx, dy = ey - sy;
+        let wx, wy, ww, wh;
+        // Snap to whichever axis is dominant; minimum 1px drag before choosing axis
+        if (Math.abs(dx) >= Math.abs(dy)) {
+          // Horizontal wall
+          wx = Math.min(sx, ex);
+          wy = sy - WALL_THICKNESS / 2;
+          ww = Math.max(Math.abs(dx), 1);
+          wh = WALL_THICKNESS;
+        } else {
+          // Vertical wall
+          wx = sx - WALL_THICKNESS / 2;
+          wy = Math.min(sy, ey);
+          ww = WALL_THICKNESS;
+          wh = Math.max(Math.abs(dy), 1);
+        }
+        preview.style.left = wx + 'px';
+        preview.style.top = wy + 'px';
+        preview.style.width = ww + 'px';
+        preview.style.height = wh + 'px';
+        preview._wall = { wx, wy, ww, wh };
+      };
+
+      const onUp = () => {
+        window.removeEventListener('mousemove', onMove);
+        window.removeEventListener('mouseup', onUp);
+        preview.style.display = 'none';
+        const w = preview._wall;
+        // Require at least 20px length to commit
+        if (!w || (w.ww < 20 && w.wh < 20)) { showToast('Drag longer to draw a wall'); return; }
+        pushHistory();
+        state.walls.push({ id: Date.now(), floorId: state.currFloorId, x: Math.round(w.wx), y: Math.round(w.wy), w: Math.round(w.ww), h: Math.round(w.wh) });
+        renderCanvas();
+        showToast('Wall added — press Esc to exit wall mode');
+      };
+
+      window.addEventListener('mousemove', onMove);
+      window.addEventListener('mouseup', onUp);
+    });
+
+    function startWallDrag(e, wall) {
+      e.preventDefault();
+      const startX = e.clientX, startY = e.clientY;
+      const origX = wall.x, origY = wall.y;
+
+      const onMove = ev => {
+        let nx = origX + (ev.clientX - startX) / state.zoom;
+        let ny = origY + (ev.clientY - startY) / state.zoom;
+        if (document.getElementById('snapToggle').checked) {
+          nx = Math.round(nx / state.gridSize) * state.gridSize;
+          ny = Math.round(ny / state.gridSize) * state.gridSize;
+        }
+        wall.x = nx; wall.y = ny;
+        const div = document.getElementById('wall-' + wall.id);
+        if (div) { div.style.left = nx + 'px'; div.style.top = ny + 'px'; }
+      };
+
+      const onUp = () => {
+        window.removeEventListener('mousemove', onMove);
+        window.removeEventListener('mouseup', onUp);
+        pushHistory();
+      };
+      window.addEventListener('mousemove', onMove);
+      window.addEventListener('mouseup', onUp);
+    }
+
+    function startWallResize(e, wall, axis) {
+      if (state.is3D) return;
+      e.stopPropagation(); e.preventDefault();
+      const startX = e.clientX, startY = e.clientY;
+      const origW = wall.w, origH = wall.h;
+      const origX = wall.x, origY = wall.y;
+
+      const onMove = ev => {
+        const dx = (ev.clientX - startX) / state.zoom;
+        const dy = (ev.clientY - startY) / state.zoom;
+        const rad = (wall.r || 0) * Math.PI / 180;
+        const cos = Math.cos(rad);
+        const sin = Math.sin(rad);
+
+        if (axis === 'h') {
+          const ds = dx * cos + dy * sin;
+          const newW = Math.max(8, snap(origW - ds));
+          const dw = origW - newW;
+          wall.w = newW;
+          wall.x = origX + (dw / 2) * (1 + cos);
+          wall.y = origY + (dw / 2) * sin;
+        } else {
+          const ds = -dx * sin + dy * cos;
+          const newH = Math.max(8, snap(origH + ds));
+          const dh = origH - newH;
+          wall.h = newH;
+          wall.x = origX + (dh / 2) * sin;
+          wall.y = origY + (dh / 2) * (1 - cos);
+        }
+
+        const div = document.getElementById('wall-' + wall.id);
+        if (div) {
+          div.style.left = wall.x + 'px';
+          div.style.top = wall.y + 'px';
+          div.style.width = wall.w + 'px';
+          div.style.height = wall.h + 'px';
+        }
+      };
+
+      const onUp = () => {
+        window.removeEventListener('mousemove', onMove);
+        window.removeEventListener('mouseup', onUp);
+        pushHistory();
+      };
+      window.addEventListener('mousemove', onMove);
+      window.addEventListener('mouseup', onUp);
+    }
+
+    /* =================================================================
+       KEYBOARD
+    ================================================================= */
+    window.addEventListener('keydown', e => {
+      if (e.target.tagName === 'INPUT' || e.target.tagName === 'SELECT') return;
+      if (e.key === 'Delete' || e.key === 'Backspace') {
+        if (state.selectedWallId) { deleteSelectedWall(); }
+        else { deleteSelected(); }
+      }
+      if (e.key === 'Escape') {
+        state.selectedId = null;
+        state.selectedWallId = null;
+        if (_wallToolActive) toggleWallTool();
+        renderAll();
+      }
+      if (e.ctrlKey && (e.key === 'z' || e.key === 'Z')) { e.preventDefault(); undo(); }
+      if (e.ctrlKey && (e.key === 'y' || e.key === 'Y')) { e.preventDefault(); redo(); }
+      if (e.ctrlKey && (e.key === 'd' || e.key === 'D')) { e.preventDefault(); duplicateSelected(); }
+      if (state.selectedId) {
+        const el = getSelected();
+        if (e.key === 'ArrowRight') el.x += 1;
+        if (e.key === 'ArrowLeft') el.x -= 1;
+        if (e.key === 'ArrowUp') el.y -= 1;
+        if (e.key === 'ArrowDown') el.y += 1;
+        if (['ArrowRight', 'ArrowLeft', 'ArrowUp', 'ArrowDown'].includes(e.key)) { e.preventDefault(); renderCanvas(); updatePropsPanel(); }
+      }
+    });
+
+    /* =================================================================
+       EXPORT / IMPORT
+    ================================================================= */
+    window.exportJSON = function () {
+      const data = 'data:text/json;charset=utf-8,' + encodeURIComponent(JSON.stringify({ floors: state.floors, stairLinks: state.stairLinks, universalLinks: state.universalLinks, walls: state.walls }, null, 2));
+      const a = document.createElement('a'); a.href = data; a.download = 'building_layout.json';
+      document.body.appendChild(a); a.click(); a.remove();
+      showToast('JSON downloaded');
+    };
+
+
+    window.importJSON = function () { document.getElementById('jsonFileInput').click(); };
+
+    window.handleJSONImport = function (event) {
+      const file = event.target.files[0]; if (!file) return;
+      const reader = new FileReader();
+      reader.onload = function (e) {
+        try {
+          const parsed = JSON.parse(e.target.result);
+          pushHistory();
+          if (parsed.floors) {
+            state.floors = parsed.floors; state.stairLinks = parsed.stairLinks || []; state.universalLinks = parsed.universalLinks || []; state.walls = parsed.walls || [];
+          } else if (Array.isArray(parsed)) {
+            state.floors = parsed; state.stairLinks = []; state.universalLinks = []; state.walls = [];
+          } else throw new Error('Invalid format');
+          state.currFloorId = state.floors[0].id;
+          state.currBlockId = state.floors[0].blocks[0].id;
+          state.selectedId = null;
+          renderAll(); showToast('Layout loaded!');
+        } catch (err) { alert('Invalid file: ' + err.message); }
+      };
+      reader.readAsText(file);
+      event.target.value = '';
+    };
+
+    window.exportPDF = async function () {
+      if (!window.jspdf) { alert('PDF library still loading...'); return; }
+      const oldZoom = state.zoom; state.zoom = 1;
+      applyCanvasTransform();
+      document.querySelectorAll('.resize,.dims-tag').forEach(el => el.style.display = 'none');
+      const { jsPDF } = window.jspdf;
+      const pdf = new jsPDF('l', 'px', [1300, 1000]);
+      await html2canvas(canvas, { scale: 2 }).then(c => {
+        pdf.addImage(c.toDataURL('image/png'), 'PNG', 20, 20, 1200, 900);
+        pdf.save('building_layout.pdf');
+      });
+      state.zoom = oldZoom; applyCanvasTransform(); renderAll();
+    };
+
+    /* =================================================================
+       BOOT
+    ================================================================= */
+    loadSavedState();
+    applyCanvasTransform();
+    renderAll();
+  </script>
+</body>
+
+</html>
