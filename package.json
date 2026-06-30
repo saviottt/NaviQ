@@ -1,0 +1,12 @@
+{
+  "name": "naviq",
+  "version": "1.0.0",
+  "description": "Building Layout Editor Pro with Supabase Deployment",
+  "main": "main.js",
+  "scripts": {
+    "dev": "npx -y http-server -p 8000"
+  },
+  "dependencies": {
+    "@supabase/supabase-js": "^2.43.4"
+  }
+}
